@@ -1,0 +1,186 @@
+buildscript {
+    dependencies {
+        classpath 'com.diffplug.spotless:spotless-plugin-gradle:3.4.0'
+    }
+}
+
+plugins {
+    id "de.undercouch.download" version "3.2.0"
+    // Used to promote a staging release build
+    // https://github.com/Codearte/gradle-nexus-staging-plugin
+    // gradle closeAndReleaseRepository
+    id "io.codearte.nexus-staging" version "0.8.0"
+}
+
+project.ext.pluginName = 'josm-atlas'
+project.ext.josmVersion = '12484'
+project.ext.josmMinVersion = '11714'
+
+apply from: 'dependencies.gradle'
+apply plugin: 'java'
+apply plugin: 'checkstyle'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+apply plugin: "com.diffplug.gradle.spotless"
+apply plugin: 'idea'
+
+sourceCompatibility=1.8
+targetCompatibility=1.8
+
+repositories
+{
+    mavenCentral()
+}
+
+idea {
+    project {
+        languageLevel = '1.8'
+    }
+}
+
+spotless {
+   java {
+      importOrder(['static java', 'static javax', 'static org', 'static com', 'static scala', 'java', 'javax', 'org', 'com', 'scala'])
+      removeUnusedImports()
+      eclipse().configFile 'config/format/code_format.xml'
+   }
+}
+
+// corresponds to POM description
+description = "Atlas Library"
+
+// This is to skip the tasks for which there is a skip<TaskName>=true environment variable
+def skippedTaskNames = System.getenv().findAll { key, value ->
+    key.startsWith("skip") && value.equalsIgnoreCase("true")
+}.keySet().collect { it.substring(4) }
+
+gradle.startParameter.excludedTaskNames += skippedTaskNames
+
+checkstyle
+{
+    toolVersion = versions.checkstyle
+}
+
+test
+{
+    testLogging
+    {
+        events "passed", "skipped", "failed"
+    }
+}
+
+configurations
+{
+    all
+    {
+        resolutionStrategy
+        {
+            force packages.atlas
+        }
+        exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    }
+}
+
+dependencies
+{
+    compile packages.atlas
+    compile files("lib/josm.jar")
+}
+
+tasks.withType(Test) {
+    reports.html.destination = file("${reporting.baseDir}/${name}")
+}
+
+/**
+ * Artifact related items
+ */
+jar
+{
+    from{
+        configurations.compile.collect
+        {
+            it.isDirectory() ? it : zipTree(it).matching{
+                exclude
+                {
+                    it.path.contains('META-INF') && (it.path.endsWith('.SF') || it.path.endsWith('.DSA') || it.path.endsWith('.RSA'))
+                }
+            }
+        }
+    }
+    manifest
+    {
+        attributes("Author": "James Gage",
+        "Plugin-Class": "org.openstreetmap.atlas.AtlasReader",
+        "Plugin-Date": "2017-08-07T23:12:29.582966Z",
+        "Plugin-Description": "Allows you to view an Atlas file as a layer.",
+        "Plugin-Icon": "images/dialogs/world-3.png",
+        "Plugin-Link": "http://wiki.openstreetmap.org/index.php/JOSM/Plugins",
+        "Plugin-Mainversion": josmMinVersion,
+        "Plugin-Version": version,
+        "Plugin-Canloadatruntime": "true",
+        )
+    }
+}
+
+// Javadoc currently fails on a dependency issue
+//task javadocJar(type: Jar) {
+//    classifier = 'javadoc'
+//    from javadoc
+//}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts
+{
+    archives /*javadocJar,*/ sourcesJar
+}
+
+
+/**
+ * JOSM SPECIFIC TASKS
+ */
+import de.undercouch.gradle.tasks.download.Download
+import org.gradle.internal.os.OperatingSystem
+
+/**
+ * This should only be run when we want to upgrade lib/josm.jar. This file does get committed,
+ * so maintainers only need to run this when we want to support a newer version of JOSM.
+ *
+ * Therefore, this is not a default task.
+ */
+task downloadJosm(type: Download) {
+    src 'http://josm.openstreetmap.de/download/josm-snapshot-' + josmVersion + '.jar'
+    dest 'lib/josm.jar'
+}
+
+/**
+ * This task installs the plugin in your system's JOSM plugins directory.
+ *
+ * https://josm.openstreetmap.de/wiki/Help/Preferences
+ *
+ * On macOS:
+ *
+ * ~/Library/JOSM/plugins/
+ */
+task installPlugin(type: Copy, dependsOn: jar) {
+    def destStr
+    if(OperatingSystem.current().isMacOsX()) {
+        destStr = "${System.getProperty('user.home')}/Library/JOSM/plugins"
+    } else if(OperatingSystem.current().isWindows()) {
+        destStr = "${System.getenv()['APPDATA']}/JOSM/plugins"
+    } else {
+        destStr = "${System.getProperty('user.home')}/.josm/plugins"
+    }
+    println("Plugin JAR Archive Path: " + jar.archivePath)
+    println("Plugin JAR Destination Path: " + destStr)
+    from jar.archivePath
+    into destStr
+    rename {
+        pluginName + '.jar'
+    }
+}
+

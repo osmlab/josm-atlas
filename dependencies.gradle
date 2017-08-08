@@ -1,0 +1,8 @@
+project.ext.versions = [
+    checkstyle: '7.6.1',
+    atlas: '5.0.0'
+]
+
+project.ext.packages = [
+    atlas: "org.openstreetmap.atlas:atlas:${versions.atlas}"
+]
