@@ -14,8 +14,7 @@ fi
 
 if [ "$TRAVIS_PULL_REQUEST" != "false" ];
 then
-	echo "Skip integration tests in pull request builds"
-	./gradlew clean build -x integrationTest
+	./gradlew clean build
 else
 	./gradlew clean build
 fi
