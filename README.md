@@ -1,5 +1,7 @@
 # josm-atlas
 
+[![Build Status](https://travis-ci.org/osmlab/josm-atlas.svg?branch=master)](https://travis-ci.org/osmlab/josm-atlas)
+
 This is a plugin for JOSM that allows .atlas files to be opened and visualized.
 
 ## Installation
