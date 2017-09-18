@@ -13,8 +13,8 @@ plugins {
 }
 
 project.ext.pluginName = 'josm-atlas'
-project.ext.josmVersion = '12484'
-project.ext.josmMinVersion = '11714'
+project.ext.josmVersion = '12712'
+project.ext.josmMinVersion = '12712'
 
 apply from: 'dependencies.gradle'
 apply plugin: 'java'

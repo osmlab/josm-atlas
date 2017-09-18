@@ -4,6 +4,8 @@
 
 This is a plugin for JOSM that allows .atlas files to be opened and visualized.
 
+You must be on JOSM v12712 or later for the latest build to work.
+
 ## Installation
 
 ### Build
@@ -11,7 +13,7 @@ This is a plugin for JOSM that allows .atlas files to be opened and visualized.
 Clone the project and edit the build.gradle to change the josm version to your JOSM's version:
 
 ```
-project.ext.josmVersion = '12484'
+project.ext.josmVersion = '12712'
 ```
 
 Then run:
