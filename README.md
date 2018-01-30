@@ -13,7 +13,7 @@ You must be on JOSM v12712 or later for the latest build to work.
 Clone the project and edit the build.gradle to change the josm version to your JOSM's version:
 
 ```
-project.ext.josmVersion = '12712'
+project.ext.josmVersion = '13367'
 ```
 
 Then run:

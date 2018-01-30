@@ -43,7 +43,6 @@ import org.openstreetmap.atlas.geography.atlas.items.Line;
 import org.openstreetmap.atlas.geography.atlas.items.Point;
 import org.openstreetmap.atlas.geography.atlas.packed.PackedEdge;
 import org.openstreetmap.atlas.utilities.scalars.Distance;
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
@@ -52,6 +51,7 @@ import org.openstreetmap.josm.data.osm.PrimitiveId;
 import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.data.osm.Way;
 import org.openstreetmap.josm.data.osm.visitor.BoundingXYVisitor;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.dialogs.DialogsPanel;
 import org.openstreetmap.josm.gui.dialogs.ToggleDialog;
 import org.openstreetmap.josm.gui.history.HistoryBrowserDialogManager;
@@ -282,7 +282,7 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
             this.titleBar = new TitleBar(this.name, "world.png");
             this.titleBar.registerMouseListener();
             add(this.titleBar, BorderLayout.NORTH);
-            Main.getLayerManager().addLayerChangeListener(this);
+            MainApplication.getLayerManager().addLayerChangeListener(this);
         }
     }
 
@@ -354,9 +354,9 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
 
                     // recreate list listeners with new list index (results of search)
                     createListListeners(searcher.getIndexToIdentifier());
-                    for (final MouseListener mouseListener : Main.map.mapView.getMouseListeners())
+                    for (final MouseListener mouseListener : MainApplication.getMap().mapView.getMouseListeners())
                     {
-                        Main.map.mapView.removeMouseListener(mouseListener);
+                        MainApplication.getMap().mapView.removeMouseListener(mouseListener);
                     }
                     createMapListener(searcher.getIndexToIdentifier());
                 }
@@ -459,7 +459,7 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
      */
     private void createMapListener(final BiMap<Integer, PrimitiveId> indexToIdentifier)
     {
-        Main.map.mapView.addMouseListener(new MouseAdapter()
+        MainApplication.getMap().mapView.addMouseListener(new MouseAdapter()
         {
             @Override
             public void mouseClicked(final MouseEvent event)
@@ -469,7 +469,7 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                     previous.setHighlighted(false);
                 }
                 listClick = false;
-                final LatLon latlon = Main.map.mapView.getLatLon(event.getX(), event.getY());
+                final LatLon latlon = MainApplication.getMap().mapView.getLatLon(event.getX(), event.getY());
                 final Location location = new Location(Latitude.degrees(latlon.lat()),
                         Longitude.degrees(latlon.lon()));
                 final TreeSet<SnappedEntity> itemsNearClick = new TreeSet<>();
@@ -678,7 +678,7 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                     final BoundingXYVisitor visitor = new BoundingXYVisitor();
                     visitor.computeBoundingBox(
                             AtlasReaderDialog.this.layer.getData().allPrimitives());
-                    Main.map.mapView.zoomTo(visitor.getBounds());
+                    MainApplication.getMap().mapView.zoomTo(visitor.getBounds());
 
                     // highlight all search results, unless "all" is the mode
                     if (!"All".equals(searchOptions.getSelectedItem().toString()))
@@ -699,16 +699,16 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                             toBeSelected.add(result.getPrimitiveId());
                         }
                         AtlasReaderDialog.this.layer.getData().setSelected(toBeSelected);
-                        Main.map.mapView.revalidate();
-                        Main.map.mapView.repaint();
+                        MainApplication.getMap().mapView.revalidate();
+                        MainApplication.getMap().mapView.repaint();
                         AtlasReaderDialog.this.previousResults = results;
                     }
 
                     // recreate list listeners with new list index (results of search)
                     createListListeners(searcher.getIndexToIdentifier());
-                    for (final MouseListener mouseListener : Main.map.mapView.getMouseListeners())
+                    for (final MouseListener mouseListener : MainApplication.getMap().mapView.getMouseListeners())
                     {
-                        Main.map.mapView.removeMouseListener(mouseListener);
+                        MainApplication.getMap().mapView.removeMouseListener(mouseListener);
                     }
                     createMapListener(searcher.getIndexToIdentifier());
                 }
@@ -756,7 +756,7 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                 // show entire Atlas
                 final BoundingXYVisitor visitor = new BoundingXYVisitor();
                 visitor.computeBoundingBox(AtlasReaderDialog.this.layer.getData().allPrimitives());
-                Main.map.mapView.zoomTo(visitor.getBounds());
+                MainApplication.getMap().mapView.zoomTo(visitor.getBounds());
             }
         };
         showAll.addActionListener(showEntireAtlas);
@@ -780,7 +780,7 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
         }
         if (visitor.getBounds() != null)
         {
-            Main.map.mapView.zoomTo(visitor.getBounds());
+            MainApplication.getMap().mapView.zoomTo(visitor.getBounds());
         }
     }
 }
