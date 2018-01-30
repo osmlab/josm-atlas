@@ -354,7 +354,8 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
 
                     // recreate list listeners with new list index (results of search)
                     createListListeners(searcher.getIndexToIdentifier());
-                    for (final MouseListener mouseListener : MainApplication.getMap().mapView.getMouseListeners())
+                    for (final MouseListener mouseListener : MainApplication.getMap().mapView
+                            .getMouseListeners())
                     {
                         MainApplication.getMap().mapView.removeMouseListener(mouseListener);
                     }
@@ -469,7 +470,8 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                     previous.setHighlighted(false);
                 }
                 listClick = false;
-                final LatLon latlon = MainApplication.getMap().mapView.getLatLon(event.getX(), event.getY());
+                final LatLon latlon = MainApplication.getMap().mapView.getLatLon(event.getX(),
+                        event.getY());
                 final Location location = new Location(Latitude.degrees(latlon.lat()),
                         Longitude.degrees(latlon.lon()));
                 final TreeSet<SnappedEntity> itemsNearClick = new TreeSet<>();
@@ -706,7 +708,8 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
 
                     // recreate list listeners with new list index (results of search)
                     createListListeners(searcher.getIndexToIdentifier());
-                    for (final MouseListener mouseListener : MainApplication.getMap().mapView.getMouseListeners())
+                    for (final MouseListener mouseListener : MainApplication.getMap().mapView
+                            .getMouseListeners())
                     {
                         MainApplication.getMap().mapView.removeMouseListener(mouseListener);
                     }
