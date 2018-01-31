@@ -15,10 +15,10 @@ import org.openstreetmap.atlas.geography.atlas.AtlasResourceLoader;
 import org.openstreetmap.atlas.utilities.collections.Iterables;
 import org.openstreetmap.atlas.utilities.scalars.Duration;
 import org.openstreetmap.atlas.utilities.time.Time;
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.ExtensionFileFilter;
 import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.osm.DataSet;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.io.importexport.FileImporter;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
 import org.openstreetmap.josm.gui.util.GuiHelper;
@@ -74,14 +74,14 @@ public class AtlasFileImporter extends FileImporter
 
         GuiHelper.runInEDT(() ->
         {
-            Main.getLayerManager().addLayer(this.layer);
-            Main.getLayerManager().setActiveLayer(this.layer);
+            MainApplication.getLayerManager().addLayer(this.layer);
+            MainApplication.getLayerManager().setActiveLayer(this.layer);
             final JFrame parent = new JFrame();
             final String[] metaData = this.atlas.metaData().toString().split(",");
             JOptionPane.showMessageDialog(parent, metaData, "Atlas MetaData",
                     JOptionPane.INFORMATION_MESSAGE);
             final AtlasReaderDialog dialog = new AtlasReaderDialog(this.layer);
-            Main.map.addToggleDialog(dialog);
+            MainApplication.getMap().addToggleDialog(dialog);
         });
     }
 
@@ -111,10 +111,10 @@ public class AtlasFileImporter extends FileImporter
 
         GuiHelper.runInEDT(() ->
         {
-            Main.getLayerManager().addLayer(this.layer);
-            Main.getLayerManager().setActiveLayer(this.layer);
+            MainApplication.getLayerManager().addLayer(this.layer);
+            MainApplication.getLayerManager().setActiveLayer(this.layer);
             final AtlasReaderDialog dialog = new AtlasReaderDialog(this.layer);
-            Main.map.addToggleDialog(dialog);
+            MainApplication.getMap().addToggleDialog(dialog);
         });
     }
 
