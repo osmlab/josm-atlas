@@ -5,6 +5,7 @@ buildscript {
 }
 
 plugins {
+    id 'org.openstreetmap.josm' version '0.3.2'
     id "de.undercouch.download" version "3.2.0"
     // Used to promote a staging release build
     // https://github.com/Codearte/gradle-nexus-staging-plugin
@@ -13,8 +14,6 @@ plugins {
 }
 
 project.ext.pluginName = 'josm-atlas'
-project.ext.josmVersion = '13367'
-project.ext.josmMinVersion = '12712'
 
 apply from: 'dependencies.gradle'
 apply plugin: 'java'
@@ -87,42 +86,10 @@ configurations
 dependencies
 {
     compile packages.atlas
-    compile files("lib/josm.jar")
 }
 
 tasks.withType(Test) {
     reports.html.destination = file("${reporting.baseDir}/${name}")
-}
-
-/**
- * Artifact related items
- */
-jar
-{
-    from{
-        configurations.compile.collect
-        {
-            it.isDirectory() ? it : zipTree(it).matching{
-                exclude
-                {
-                    it.path.contains('META-INF') && (it.path.endsWith('.SF') || it.path.endsWith('.DSA') || it.path.endsWith('.RSA'))
-                }
-            }
-        }
-    }
-    manifest
-    {
-        attributes("Author": "James Gage",
-        "Plugin-Class": "org.openstreetmap.atlas.AtlasReader",
-        "Plugin-Date": "2017-08-07T23:12:29.582966Z",
-        "Plugin-Description": "Allows you to view an Atlas file as a layer.",
-        "Plugin-Icon": "images/dialogs/world-3.png",
-        "Plugin-Link": "http://wiki.openstreetmap.org/index.php/JOSM/Plugins",
-        "Plugin-Mainversion": josmMinVersion,
-        "Plugin-Version": version,
-        "Plugin-Canloadatruntime": "true",
-        )
-    }
 }
 
 // Javadoc currently fails on a dependency issue
@@ -148,16 +115,6 @@ artifacts
 import de.undercouch.gradle.tasks.download.Download
 import org.gradle.internal.os.OperatingSystem
 
-/**
- * This should only be run when we want to upgrade lib/josm.jar. This file does get committed,
- * so maintainers only need to run this when we want to support a newer version of JOSM.
- *
- * Therefore, this is not a default task.
- */
-task downloadJosm(type: Download) {
-    src 'http://josm.openstreetmap.de/download/josm-snapshot-' + josmVersion + '.jar'
-    dest 'lib/josm.jar'
-}
 
 /**
  * This task installs the plugin in your system's JOSM plugins directory.
