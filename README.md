@@ -8,33 +8,36 @@ You must be on JOSM v12712 or later for the latest build to work.
 
 ## Installation
 
+Each time you run
+```bash
+./gradlew installPlugin
+```
+the plugin is built if needed. The resulting \*.jar file is activated for your already installed JOSM instance.
+This task then fires up that JOSM instance and you can use the plugin right away.
+
+After that you can start JOSM however you want, the plugin will still be installed. You'd only have to repeat this, when you want to later update to a newer version of the plugin.
+
+## Development
+
+### Launch a clean JOSM instance
+
+When you run
+```bash
+./gradlew runJosm
+```
+a clean JOSM instance is fired up containing only the `josm-atlas` plugin.
+
+You do **not** have to have JOSM already installed for this: Gradle will download a JOSM executable and run that.
+
+A new `JOSM_HOME` directory is created (separate from any existing ones). It persists between calls to this task, but can be cleared using the `cleanJosm` task.
+
 ### Build
 
-Clone the project and edit the build.gradle to change the josm version to your JOSM's version:
-
+Run
+```bash
+./gradlew build
 ```
-project.ext.josmVersion = '13367'
-```
-
-Then run:
-
-```
-gradle downloadJosm
-```
-
-and
-
-```
-gradle installPlugin
-```
-
-### Launch
-
-Open JOSM and navigate to your Plugin Preferences.
-
-    Edit > Preferences > Plugins
-
-Type `josm-atlas` into the search box and select the plugin.
+to start a full build.
 
 ## Contributing
 
