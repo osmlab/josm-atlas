@@ -14,10 +14,9 @@ plugins {
     id 'idea'
 }
 
-// corresponds to POM description/group/version
+// corresponds to POM description/group
 description = "Atlas Library"
 group = 'org.openstreetmap.atlas'
-version = '4.0.0-SNAPSHOT'
 
 archivesBaseName = 'josm-atlas'
 josm { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.2/gradle-josm-plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-plugin-extension
