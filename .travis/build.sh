@@ -14,7 +14,7 @@ fi
 
 if [ "$TRAVIS_PULL_REQUEST" != "false" ];
 then
-	./gradlew clean build
+	./gradlew clean build minJosmVersionClasses
 else
-	./gradlew clean build
+	./gradlew clean build minJosmVersionClasses
 fi

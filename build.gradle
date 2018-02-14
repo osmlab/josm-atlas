@@ -1,28 +1,38 @@
-buildscript {
-    dependencies {
-        classpath 'com.diffplug.spotless:spotless-plugin-gradle:3.4.0'
-    }
-}
-
 plugins {
     id 'org.openstreetmap.josm' version '0.3.2'
-    id "de.undercouch.download" version "3.2.0"
+    id 'com.diffplug.gradle.spotless' version '3.9.0'
     // Used to promote a staging release build
     // https://github.com/Codearte/gradle-nexus-staging-plugin
     // gradle closeAndReleaseRepository
     id "io.codearte.nexus-staging" version "0.8.0"
+
+    id 'java'
+    id 'checkstyle'
+    id 'maven'
+    id 'maven-publish'
+    id 'signing'
+    id 'idea'
 }
 
-project.ext.pluginName = 'josm-atlas'
+// corresponds to POM description/group
+description = "Atlas Library"
+group = 'org.openstreetmap.atlas'
+
+archivesBaseName = 'josm-atlas'
+josm { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.2/gradle-josm-plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-plugin-extension
+  josmCompileVersion '13367'
+  manifest { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.2/gradle-josm-plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-manifest
+    author = 'James Gage'
+    canLoadAtRuntime = true
+    description = 'Allows you to view an Atlas file as a layer.'
+    iconPath = 'images/dialogs/world-3.png'
+    mainClass = 'org.openstreetmap.atlas.AtlasReader'
+    minJosmVersion = '12712'
+    website = new URL('https://github.com/osmlab/josm-atlas')
+  }
+}
 
 apply from: 'dependencies.gradle'
-apply plugin: 'java'
-apply plugin: 'checkstyle'
-apply plugin: 'maven'
-apply plugin: 'maven-publish'
-apply plugin: 'signing'
-apply plugin: "com.diffplug.gradle.spotless"
-apply plugin: 'idea'
 
 sourceCompatibility=1.8
 targetCompatibility=1.8
@@ -42,14 +52,12 @@ idea {
 
 spotless {
    java {
-      importOrder(['static java', 'static javax', 'static org', 'static com', 'static scala', 'java', 'javax', 'org', 'com', 'scala'])
+      importOrder 'static java', 'static javax', 'static org', 'static com', 'static scala', 'java', 'javax', 'org', 'com', 'scala'
       removeUnusedImports()
       eclipse().configFile 'config/format/code_format.xml'
    }
 }
 
-// corresponds to POM description
-description = "Atlas Library"
 
 // This is to skip the tasks for which there is a skip<TaskName>=true environment variable
 def skippedTaskNames = System.getenv().findAll { key, value ->
@@ -85,7 +93,7 @@ configurations
 
 dependencies
 {
-    compile packages.atlas
+    packIntoJar packages.atlas
 }
 
 tasks.withType(Test) {
@@ -108,13 +116,10 @@ artifacts
     archives /*javadocJar,*/ sourcesJar
 }
 
-
 /**
  * JOSM SPECIFIC TASKS
  */
-import de.undercouch.gradle.tasks.download.Download
 import org.gradle.internal.os.OperatingSystem
-
 
 /**
  * This task installs the plugin in your system's JOSM plugins directory.
@@ -124,22 +129,40 @@ import org.gradle.internal.os.OperatingSystem
  * On macOS:
  *
  * ~/Library/JOSM/plugins/
- */
-task installPlugin(type: Copy, dependsOn: jar) {
+  */
+task installPlugin(type: Copy) {
     def destStr
     if(OperatingSystem.current().isMacOsX()) {
         destStr = "${System.getProperty('user.home')}/Library/JOSM/plugins"
     } else if(OperatingSystem.current().isWindows()) {
         destStr = "${System.getenv()['APPDATA']}/JOSM/plugins"
-    } else {
+    } else if (new File("${System.getProperty('user.home')}/.josm").exists()) {
         destStr = "${System.getProperty('user.home')}/.josm/plugins"
+    } else {
+        destStr = "${System.getProperty('user.home')}/.local/share/JOSM/plugins"
     }
-    println("Plugin JAR Archive Path: " + jar.archivePath)
-    println("Plugin JAR Destination Path: " + destStr)
-    from jar.archivePath
+    logger.lifecycle("Plugin JAR Archive Path: " + dist.outputs.files.asFileTree.files[0])
+    logger.lifecycle("Plugin JAR Destination Path: " + destStr)
+    from tasks.dist
     into destStr
-    rename {
-        pluginName + '.jar'
+    project.afterEvaluate {
+      finalizedBy activatePlugin
     }
 }
 
+/**
+ * Starts a JOSM instance and activates the plugin if it's not already active.
+ *
+ * The difference to the `runJosm` task is that there a completely clean instance is started up and a temporary JOSM_HOME is used.
+ * Here your default JOSM_HOME is used and you have to have JOSM already installed.
+ */
+task activatePlugin(type: Exec, dependsOn: installPlugin) {
+  def configFile = new File(buildDir, "addPluginConfig.xml")
+  doFirst {
+    configFile.withWriter { out ->
+      out.print "<?xml version=\"1.0\" encoding=\"UTF-8\"?><config><preferences operation=\"append\"><list key=\"plugins\"><entry value=\"${project.archivesBaseName}\"/></list></preferences></config>"
+    }
+  }
+  executable 'josm'
+  args '--load-preferences=' + configFile.toURI().toURL().toString()
+}
