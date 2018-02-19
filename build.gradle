@@ -20,14 +20,14 @@ group = 'org.openstreetmap.atlas'
 
 archivesBaseName = 'josm-atlas'
 josm { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.2/gradle-josm-plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-plugin-extension
-  josmCompileVersion '13367'
+  josmCompileVersion '13446'
   manifest { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.2/gradle-josm-plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-manifest
     author = 'James Gage'
     canLoadAtRuntime = true
     description = 'Allows you to view an Atlas file as a layer.'
     iconPath = 'images/dialogs/world-3.png'
     mainClass = 'org.openstreetmap.atlas.AtlasReader'
-    minJosmVersion = '12712'
+    minJosmVersion = '13440'
     website = new URL('https://github.com/osmlab/josm-atlas')
   }
 }
