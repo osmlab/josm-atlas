@@ -33,6 +33,18 @@ script: .travis/build.sh
 # Build stages
 jobs:
   include:
+    - stage: i18n
+      language: python
+      python: "3.6"
+      # Install Transifex client v0.13.1
+      install: pip install git+https://github.com/transifex/transifex-client.git@08deb1255de7217d2574e3c49dcb578f03b195e0#egg=transifex-client
+      script: ./gradlew generatePot
+      after_success: |
+        if [ ! -z "$TRANSIFEX_TOKEN" ]; then
+          tx --token="$TRANSIFEX_TOKEN" --force-save --no-interactive init
+          git checkout HEAD .tx/config
+          tx push -s --no-interactive
+        fi
     - stage: merge dev to master
       script: .travis/merge-dev-to-master.sh
     - stage: tag master
@@ -55,6 +67,8 @@ jobs:
 # Order and conditions for build stages
 stages:
   - name: test
+  - name: i18n
+    if: branch = master AND type = push AND repo = osmlab/josm-atlas
   - name: merge dev to master
     if: branch = dev AND type = push AND repo = osmlab/josm-atlas
   - name: tag master
