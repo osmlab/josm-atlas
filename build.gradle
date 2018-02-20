@@ -1,10 +1,10 @@
 plugins {
-    id 'org.openstreetmap.josm' version '0.3.2'
+    id 'org.openstreetmap.josm' version '0.3.4'
     id 'com.diffplug.gradle.spotless' version '3.9.0'
     // Used to promote a staging release build
     // https://github.com/Codearte/gradle-nexus-staging-plugin
     // gradle closeAndReleaseRepository
-    id "io.codearte.nexus-staging" version "0.8.0"
+    id "io.codearte.nexus-staging" version "0.11.0"
 
     id 'java'
     id 'checkstyle'
@@ -14,34 +14,45 @@ plugins {
     id 'idea'
 }
 
+// Define tool and dependency versions
+checkstyle {
+    toolVersion = '8.8'
+}
+josm { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.4/gradle-josm-plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-plugin-extension
+    josmCompileVersion '13367'
+    manifest.minJosmVersion = '12712'
+}
+ext.versions = [
+    'atlas': '5.0.7'
+]
+
 // corresponds to POM description/group
 description = "Atlas Library"
 group = 'org.openstreetmap.atlas'
+// for the version number see `gradle.properties`
 
+// JOSM plugin configuration
 archivesBaseName = 'josm-atlas'
-josm { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.2/gradle-josm-plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-plugin-extension
-  josmCompileVersion '13367'
-  manifest { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.2/gradle-josm-plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-manifest
+josm.manifest { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.4/gradle-josm-plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-manifest
     author = 'James Gage'
     canLoadAtRuntime = true
     description = 'Allows you to view an Atlas file as a layer.'
     iconPath = 'images/dialogs/world-3.png'
     mainClass = 'org.openstreetmap.atlas.AtlasReader'
-    minJosmVersion = '12712'
     website = new URL('https://github.com/osmlab/josm-atlas')
-  }
 }
-
-apply from: 'dependencies.gradle'
 
 sourceCompatibility=1.8
 targetCompatibility=1.8
 
-repositories
-{
+repositories {
     // For geotools
     maven { url "http://download.osgeo.org/webdav/geotools/" }
     mavenCentral()
+}
+
+dependencies {
+    packIntoJar "org.openstreetmap.atlas:atlas:${versions.atlas}"
 }
 
 idea {
@@ -51,11 +62,11 @@ idea {
 }
 
 spotless {
-   java {
-      importOrder 'static java', 'static javax', 'static org', 'static com', 'static scala', 'java', 'javax', 'org', 'com', 'scala'
-      removeUnusedImports()
-      eclipse().configFile 'config/format/code_format.xml'
-   }
+    java {
+        importOrder 'static java', 'static javax', 'static org', 'static com', 'static scala', 'java', 'javax', 'org', 'com', 'scala'
+        removeUnusedImports()
+        eclipse().configFile 'config/format/code_format.xml'
+    }
 }
 
 
@@ -66,54 +77,42 @@ def skippedTaskNames = System.getenv().findAll { key, value ->
 
 gradle.startParameter.excludedTaskNames += skippedTaskNames
 
-checkstyle
-{
-    toolVersion = versions.checkstyle
-}
-
-test
-{
-    testLogging
-    {
+test {
+    testLogging {
         events "passed", "skipped", "failed"
     }
 }
 
-configurations
-{
-    all
-    {
-        resolutionStrategy
-        {
-            force packages.atlas
-        }
-        exclude group: 'org.slf4j', module: 'slf4j-log4j12'
-    }
-}
-
-dependencies
-{
-    packIntoJar packages.atlas
-}
-
 tasks.withType(Test) {
-    reports.html.destination = file("${reporting.baseDir}/${name}")
+    // Use `build/reports/$testTaskName` instead of `build/reports/$sourceSetName`
+    reports.html.setDestination(file("${reporting.baseDir}/${name}"))
 }
 
-// Javadoc currently fails on a dependency issue
-//task javadocJar(type: Jar) {
-//    classifier = 'javadoc'
-//    from javadoc
-//}
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
 
 task sourcesJar(type: Jar) {
     classifier = 'sources'
     from sourceSets.main.allSource
 }
 
-artifacts
-{
-    archives /*javadocJar,*/ sourcesJar
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
+if (System.env.containsKey("GPG_KEY_ID") && System.env.containsKey("GPG_PASSPHRASE") && System.env.containsKey("GPG_KEY_LOCATION")) {
+    ext."signing.keyId" = System.env.GPG_KEY_ID
+    ext."signing.password" = System.env.GPG_PASSPHRASE
+    ext."signing.secretKeyRingFile" = System.env.GPG_KEY_LOCATION
+}
+if (!ext.has("signing.keyId") || !ext.has("signing.password") || !ext.has("signing.secretKeyRingFile")) {
+    logger.warn "\nThe artifacts of this build is not signed.\nSet GPG_KEY_ID, GPG_PASSPHRASE and GPG_KEY_LOCATION to sign it.\n"
+} else {
+    signing {
+        sign configurations.archives
+    }
 }
 
 /**
@@ -129,7 +128,7 @@ import org.gradle.internal.os.OperatingSystem
  * On macOS:
  *
  * ~/Library/JOSM/plugins/
-  */
+ */
 task installPlugin(type: Copy) {
     def destStr
     if(OperatingSystem.current().isMacOsX()) {
