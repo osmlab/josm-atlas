@@ -108,7 +108,7 @@ if (System.env.containsKey("GPG_KEY_ID") && System.env.containsKey("GPG_PASSPHRA
     ext."signing.secretKeyRingFile" = System.env.GPG_KEY_LOCATION
 }
 if (!ext.has("signing.keyId") || !ext.has("signing.password") || !ext.has("signing.secretKeyRingFile")) {
-    logger.warn "\nThe artifacts of this build is not signed.\nSet GPG_KEY_ID, GPG_PASSPHRASE and GPG_KEY_LOCATION to sign it.\n"
+    logger.warn "\nThe artifacts of this build are not signed.\nSet GPG_KEY_ID, GPG_PASSPHRASE and GPG_KEY_LOCATION to sign it.\n"
 } else {
     signing {
         sign configurations.archives
