@@ -109,6 +109,14 @@ if (System.env.containsKey("GPG_KEY_ID") && System.env.containsKey("GPG_PASSPHRA
 }
 if (!ext.has("signing.keyId") || !ext.has("signing.password") || !ext.has("signing.secretKeyRingFile")) {
     logger.warn "\nThe artifacts of this build are not signed.\nSet GPG_KEY_ID, GPG_PASSPHRASE and GPG_KEY_LOCATION to sign it.\n"
+    if (
+        System.env.containsKey("TRAVIS_REPO_SLUG")
+        && System.env.containsKey("TRAVIS_PULL_REQUEST")
+        && "osmlab/josm-atlas".equals(System.env.TRAVIS_REPO_SLUG)
+        && "false".equals(System.env.TRAVIS_PULL_REQUEST)
+    ) {
+        throw new GradleException("Builds for the repository ${System.env.TRAVIS_REPO_SLUG} must be signed!")
+    }
 } else {
     signing {
         sign configurations.archives
