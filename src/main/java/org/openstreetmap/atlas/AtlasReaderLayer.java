@@ -12,7 +12,6 @@ import org.openstreetmap.josm.data.osm.visitor.BoundingXYVisitor;
 import org.openstreetmap.josm.gui.layer.Layer;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.tools.ImageProvider;
-import org.openstreetmap.josm.tools.Logging;
 
 /**
  * @author jgage
@@ -31,9 +30,9 @@ public class AtlasReaderLayer extends OsmDataLayer
         this.atlas = atlas;
         this.bounds = bounds;
         // Make sure dataset is read-only
-        if (!data.isReadOnly())
+        if (!data.isLocked())
         {
-            data.setReadOnly();
+            data.lock();
         }
     }
 
