@@ -11,8 +11,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.TreeSet;
 
 import javax.swing.AbstractAction;
@@ -25,7 +23,6 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 
@@ -59,6 +56,7 @@ import org.openstreetmap.josm.gui.layer.LayerManager.LayerAddEvent;
 import org.openstreetmap.josm.gui.layer.LayerManager.LayerChangeListener;
 import org.openstreetmap.josm.gui.layer.LayerManager.LayerOrderChangeEvent;
 import org.openstreetmap.josm.gui.layer.LayerManager.LayerRemoveEvent;
+import org.openstreetmap.josm.tools.Logging;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -213,7 +211,6 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
 
     private final AtlasReaderLayer layer;
     private final JPanel panel;
-    private JTable tagBox = null;
     private JList<PrintablePrimitive> list;
     private DefaultListModel<PrintablePrimitive> listAll;
     private JScrollPane listPane;
@@ -387,8 +384,6 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                 if (identifier != null)
                 {
                     zoomTo(AtlasReaderDialog.this.layer.getData().getPrimitiveById(identifier));
-                    createTagBox(
-                            AtlasReaderDialog.this.layer.getData().getPrimitiveById(identifier));
                 }
             }
         });
@@ -400,7 +395,6 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                 final PrimitiveId identifier = indexToIdentifier.get(index);
                 this.layer.getData().setSelected(identifier);
                 zoomTo(this.layer.getData().getPrimitiveById(identifier));
-                createTagBox(this.layer.getData().getPrimitiveById(identifier));
             }
         });
 
@@ -422,7 +416,6 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                         .get(AtlasReaderDialog.this.selectedIndex);
                 AtlasReaderDialog.this.layer.getData().setSelected(identifier);
                 zoomTo(AtlasReaderDialog.this.layer.getData().getPrimitiveById(identifier));
-                createTagBox(AtlasReaderDialog.this.layer.getData().getPrimitiveById(identifier));
                 AtlasReaderDialog.this.list
                         .ensureIndexIsVisible(AtlasReaderDialog.this.selectedIndex);
             }
@@ -443,7 +436,6 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                         .get(AtlasReaderDialog.this.selectedIndex);
                 AtlasReaderDialog.this.layer.getData().setSelected(identifier);
                 zoomTo(AtlasReaderDialog.this.layer.getData().getPrimitiveById(identifier));
-                createTagBox(AtlasReaderDialog.this.layer.getData().getPrimitiveById(identifier));
                 AtlasReaderDialog.this.list
                         .ensureIndexIsVisible(AtlasReaderDialog.this.selectedIndex);
             }
@@ -526,40 +518,12 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                     }
                     catch (final Exception e)
                     {
-                        e.printStackTrace();
+                        Logging.error(e);
                     }
                     previous = selected;
-                    createTagBox(selected);
                 }
             }
         });
-    }
-
-    /*
-     * Converts tagMap to 2d array and creates/updates the Tag Box.
-     */
-    private void createTagBox(final OsmPrimitive selected)
-    {
-        if (this.tagBox != null)
-        {
-            this.panel.remove(this.tagBox);
-        }
-        final Set<String> keys = selected.getKeys().keySet();
-        final Iterator<String> keyIterator = keys.iterator();
-        final Iterator<String> valuesIterator = selected.getKeys().values().iterator();
-        final String[] columnNames = { "Key", "Value" };
-        final String[][] data = new String[keys.size() + 1][2];
-        data[0][0] = "atlas_identifier";
-        data[0][1] = String.valueOf(selected.getId());
-        for (int i = 1; i < keys.size() + 1; i++)
-        {
-            data[i][0] = keyIterator.next();
-            data[i][1] = valuesIterator.next();
-        }
-        this.tagBox = new JTable(data, columnNames);
-        this.panel.add(this.tagBox, BorderLayout.SOUTH);
-        this.tagBox.revalidate();
-        this.tagBox.repaint();
     }
 
     private void historyButtonInit(final JButton historyButton)
