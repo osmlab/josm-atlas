@@ -39,7 +39,6 @@ josm.manifest { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.4
     description = 'Allows you to view an Atlas file as a layer.'
     iconPath = 'images/dialogs/world-3.png'
     mainClass = 'org.openstreetmap.atlas.AtlasReader'
-    minJosmVersion = '13457'
     website = new URL('https://github.com/osmlab/josm-atlas')
 }
 
