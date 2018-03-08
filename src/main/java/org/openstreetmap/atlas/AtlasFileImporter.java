@@ -23,6 +23,7 @@ import org.openstreetmap.josm.gui.io.importexport.FileImporter;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
 import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.io.IllegalDataException;
+import org.openstreetmap.josm.tools.Logging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +60,7 @@ public class AtlasFileImporter extends FileImporter
         }
         catch (final Exception e)
         {
-            e.printStackTrace();
+            Logging.error(e);
             JOptionPane.showMessageDialog(null, e.toString(), "Corrupt Atlas File",
                     JOptionPane.ERROR_MESSAGE);
         }

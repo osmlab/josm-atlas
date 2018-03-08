@@ -18,6 +18,7 @@ import org.openstreetmap.josm.data.osm.PrimitiveId;
 import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.data.osm.TagMap;
 import org.openstreetmap.josm.data.osm.Way;
+import org.openstreetmap.josm.tools.Logging;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -30,7 +31,6 @@ public class AtlasSearch
     /**
      * @author jgage
      */
-
     public enum SearchType
     {
         OSM_IDENTIFIER("OSM ID"),
@@ -102,7 +102,7 @@ public class AtlasSearch
                     }
                     catch (final Exception e)
                     {
-                        e.printStackTrace();
+                        Logging.error(e);
                     }
                 }
                 break;
