@@ -12,17 +12,66 @@ env:
     - secure: "VTV9pENhM2t1aO9Vx22hD5P72susbrZAh0ZLYailcgVGeA1rqUtf0xEgCZuVfNjePc6XCA5vh0IJMHmOptPo+/5adOoZxaq+qtI6JwahpGPypZfYQlFhy/GELNY8WGvZ9A1s1b/6Glbdq7c++RcN3mTmiwLTaWXNvTCWYF9BtDLthpZinwwUf27Ap00yVVVPEJ0zifcLaM0W0oesUCZAagcEB25P4moBFmXNkWfX63Ef1Gyfkung8/zZVsWdKvHx9ArGyipMIGu9LyV5hMci80qxmTc0nmUW8svBqRWB09szmkKdgCdqeBnFTLrXEXr6nqB3gjQKyQtGz91jOxBguzVgCBb8KlXNJGVyph99tzP+zEu5uqdjDk7ilIQrDETLlJ3quLmvaYAHxIyk1KiN6WUmwhYo0ni+qMjxEDy1ghTbQmXlcYyj4Ia+Dz9qfZMk8zrV5HqffVm6i2kss0GBLCJlhvvFv54qwqoJuI+hEt9Ocs5NKKiuPqI1SVUJzWLem4uLP8bwDa13jgVxb6LWNmNBMOyZxN0iNqMpI9yjbsg84IgDESMtF9x87MR3Vk0gTwOyseKc6hbTuhjNtcQfLJIboPfP3j30bAe7CQTKng1pxngWOLCEsruE3SXc5/Lo/3TBm8PS+22U1Zm3TG3EBFS9jpKOBnz3/HbaUf8Y2ak="
     - GPG_KEY_LOCATION=".travis/secring.gpg"
     - ENCRYPTED_GPG_KEY_LOCATION=".travis/secring.gpg.enc"
+
 branches:
   only:
   - master
   - dev
+  - /^v\d+\.\d+(\.\d+)?$/
+
+# Default settings for build stages
 language: java
 jdk:
+  - openjdk8
   - oraclejdk8
-before_install:
-  - chmod -R ug+x .travis
+  - oraclejdk9
+install:
+  - chmod ug+x .travis/*.sh
   - .travis/install.sh
-script:
-  - chmod -R ug+x .travis
-  - .travis/build.sh
-  - .travis/merge-dev-to-master-gate.sh
+script: .travis/build.sh
+
+# Build stages
+jobs:
+  include:
+    - stage: i18n
+      language: python
+      python: "3.6"
+      # Install Transifex client v0.13.1
+      install: pip install git+https://github.com/transifex/transifex-client.git@08deb1255de7217d2574e3c49dcb578f03b195e0#egg=transifex-client
+      script: ./gradlew generatePot
+      after_success: |
+        if [ ! -z "$TRANSIFEX_TOKEN" ]; then
+          tx --token="$TRANSIFEX_TOKEN" --force-save --no-interactive init
+          git checkout HEAD .tx/config
+          tx push -s --no-interactive
+        fi
+    - stage: merge dev to master
+      script: .travis/merge-dev-to-master.sh
+    - stage: tag master
+      script: .travis/tag-master.sh
+    - stage: GitHub release
+      script: ./gradlew build
+      env: MANUAL_RELEASE_TRIGGERED=true
+      deploy:
+        api_key: $GITHUB_SECRET_TOKEN
+        file_glob: true
+        provider: releases
+        skip_cleanup: true
+        file:
+          - "build/libs/*"
+          - "build/dist/josm-atlas.jar"
+          - "build/tmp/jar/MANIFEST.MF"
+        on:
+          tags: true
+
+# Order and conditions for build stages
+stages:
+  - name: test
+  - name: i18n
+    if: branch = master AND type = push AND repo = osmlab/josm-atlas
+  - name: merge dev to master
+    if: branch = dev AND type = push AND repo = osmlab/josm-atlas
+  - name: tag master
+    if: branch = master AND type = push AND repo = osmlab/josm-atlas
+  - name: GitHub release
+    if: tag IS present AND type = push AND repo = osmlab/josm-atlas
