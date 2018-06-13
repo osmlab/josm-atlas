@@ -34,7 +34,7 @@ import org.openstreetmap.josm.tools.Utils;
  */
 public abstract class AtlasPrimitive implements IPrimitive
 {
-    static final String ATLAS_ID = "created_by";
+    static final String ATLAS_ID = "atlas_id";
 
     /** the parent dataset */
     private AtlasDataSet dataSet;
