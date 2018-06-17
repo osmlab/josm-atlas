@@ -132,12 +132,10 @@ public class AtlasRelation extends AtlasPrimitive implements IRelation<AtlasRela
     @Override
     public org.openstreetmap.josm.data.osm.Relation toOsmPrimitive(final DataSet dataSet)
     {
-        //org.openstreetmap.josm.data.osm.Relation r = (org.openstreetmap.josm.data.osm.Relation) ds.getPrimitiveById(getPrimitiveId());
-        org.openstreetmap.josm.data.osm.Relation rel = (org.openstreetmap.josm.data.osm.Relation) dataSet.getPrimitiveById(getOsmPrimitiveId());
+        org.openstreetmap.josm.data.osm.Relation rel = (org.openstreetmap.josm.data.osm.Relation) dataSet.getPrimitiveById(getPrimitiveId());
         if (rel == null)
         {
-            //final RelationData rd = new RelationData(getUniqueId());//FIXME
-            final RelationData data = new RelationData(getOsmId());
+            final RelationData data = new RelationData(getUniqueId());
             data.setKeys(getKeys());
             rel = new org.openstreetmap.josm.data.osm.Relation(data.getId(), data.getVersion());
             rel.setVisible(data.isVisible());

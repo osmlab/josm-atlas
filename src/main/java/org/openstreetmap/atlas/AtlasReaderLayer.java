@@ -3,6 +3,8 @@ package org.openstreetmap.atlas;
 import static org.openstreetmap.josm.tools.I18n.tr;
 
 import java.awt.Graphics2D;
+import java.util.List;
+import java.util.ListIterator;
 
 import javax.swing.Action;
 import javax.swing.Icon;
@@ -11,23 +13,33 @@ import org.openstreetmap.atlas.data.AtlasDataSet;
 import org.openstreetmap.atlas.geography.atlas.Atlas;
 import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.osm.DataSelectionListener;
+import org.openstreetmap.josm.data.osm.OsmPrimitiveType;
+import org.openstreetmap.josm.data.osm.PrimitiveId;
+import org.openstreetmap.josm.data.osm.SimplePrimitiveId;
 import org.openstreetmap.josm.data.osm.event.SelectionEventManager;
 import org.openstreetmap.josm.data.osm.visitor.BoundingXYVisitor;
 import org.openstreetmap.josm.data.osm.visitor.paint.MapRendererFactory;
 import org.openstreetmap.josm.data.osm.visitor.paint.Rendering;
 import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.MapView;
+import org.openstreetmap.josm.gui.history.HistoryBrowserDialogManager;
+import org.openstreetmap.josm.gui.history.HistoryHook;
 import org.openstreetmap.josm.gui.layer.AbstractOsmDataLayer;
 import org.openstreetmap.josm.gui.layer.Layer;
+import org.openstreetmap.josm.gui.layer.MainLayerManager.ActiveLayerChangeEvent;
+import org.openstreetmap.josm.gui.layer.MainLayerManager.ActiveLayerChangeListener;
 import org.openstreetmap.josm.spi.preferences.Config;
 import org.openstreetmap.josm.tools.ImageProvider;
 
 /**
  * @author jgage
  */
-public class AtlasReaderLayer extends AbstractOsmDataLayer implements DataSelectionListener
+public class AtlasReaderLayer extends AbstractOsmDataLayer implements DataSelectionListener, ActiveLayerChangeListener, HistoryHook
 {
     private static final String LAYER_NAME = tr("Atlas Layer");
+
+    private static final int NINE = 9;
+    private static final int TEN = 10;
 
     private Atlas atlas;
     private AtlasDataSet data;
@@ -41,22 +53,16 @@ public class AtlasReaderLayer extends AbstractOsmDataLayer implements DataSelect
         this.data = data;
         this.bounds = bounds;
         data.addSelectionListener(this);
-        MainApplication.getLayerManager().addActiveLayerChangeListener(e ->
-        {
-            if (e.getSource().getActiveLayer() == AtlasReaderLayer.this)
-            {
-                data.addSelectionListener(SelectionEventManager.getInstance());
-            }
-            else 
-            {
-                data.removeSelectionListener(SelectionEventManager.getInstance());
-            }
-        });
+        MainApplication.getLayerManager().addActiveLayerChangeListener(this);
+        HistoryBrowserDialogManager.addHistoryHook(this);
     }
 
     @Override
     public void destroy()
     {
+        HistoryBrowserDialogManager.removeHistoryHook(this);
+        MainApplication.getLayerManager().removeActiveLayerChangeListener(this);
+        data.removeSelectionListener(this);
         this.atlas = null;
         this.data = null;
     }
@@ -135,5 +141,34 @@ public class AtlasReaderLayer extends AbstractOsmDataLayer implements DataSelect
     public void selectionChanged(final SelectionChangeEvent event)
     {
         invalidate();
+    }
+
+    @Override
+    public void modifyRequestedIds(final List<PrimitiveId> ids)
+    {
+        for (final ListIterator<PrimitiveId> iter = ids.listIterator(); iter.hasNext();)
+        {
+            final PrimitiveId pid = iter.next();
+            if (data.getPrimitiveById(pid) != null)
+            {
+                iter.set(new SimplePrimitiveId(
+                        Long.parseLong(String.valueOf(pid.getUniqueId()).substring(
+                                0, OsmPrimitiveType.NODE.equals(pid.getType()) ? TEN : NINE)),
+                        pid.getType()));
+            }
+        }
+    }
+
+    @Override
+    public void activeOrEditLayerChanged(final ActiveLayerChangeEvent e)
+    {
+        if (e.getSource().getActiveLayer() == AtlasReaderLayer.this)
+        {
+            data.addSelectionListener(SelectionEventManager.getInstance());
+        }
+        else 
+        {
+            data.removeSelectionListener(SelectionEventManager.getInstance());
+        }
     }
 }

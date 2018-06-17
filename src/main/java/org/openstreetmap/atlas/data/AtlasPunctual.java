@@ -111,10 +111,10 @@ public abstract class AtlasPunctual extends AtlasPrimitive implements INode
     @Override
     public Node toOsmPrimitive(final DataSet dataSet)
     {
-        Node node = (Node) dataSet.getPrimitiveById(getOsmPrimitiveId());
+        Node node = (Node) dataSet.getPrimitiveById(getPrimitiveId());
         if (node == null)
         {
-            final NodeData data = new NodeData(getOsmId());
+            final NodeData data = new NodeData(getUniqueId());
             data.setCoor(getCoor());
             data.setKeys(getKeys());
             node = new Node(data.getId(), data.getVersion());

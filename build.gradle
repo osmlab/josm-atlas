@@ -19,8 +19,8 @@ checkstyle {
     toolVersion = '8.10.1'
 }
 josm { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.4/gradle-josm-plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-plugin-extension
-    josmCompileVersion '13926'
-    manifest.minJosmVersion = '13926'
+    josmCompileVersion '13950'
+    manifest.minJosmVersion = '13950'
 }
 ext.versions = [
     'atlas': '5.0.16'

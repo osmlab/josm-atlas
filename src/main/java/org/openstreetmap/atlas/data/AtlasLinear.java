@@ -181,10 +181,10 @@ public abstract class AtlasLinear<P extends AtlasPunctual> extends AtlasPrimitiv
     @Override
     public Way toOsmPrimitive(final DataSet dataSet)
     {
-        Way way = (Way) dataSet.getPrimitiveById(getOsmPrimitiveId());
+        Way way = (Way) dataSet.getPrimitiveById(getPrimitiveId());
         if (way == null)
         {
-            final WayData data = new WayData(getOsmId());
+            final WayData data = new WayData(getUniqueId());
             data.setKeys(getKeys());
             way = new Way(data.getId(), data.getVersion());
             way.setVisible(data.isVisible());
