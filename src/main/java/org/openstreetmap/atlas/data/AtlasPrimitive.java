@@ -422,28 +422,28 @@ public abstract class AtlasPrimitive implements IPrimitive
     @Override
     public boolean isTagged()
     {
-        // TODO: flags
+        // TODO flags
         return item != null ? !item.getOsmTags().isEmpty() : false;
     }
 
     @Override
     public boolean isAnnotated()
     {
-        // TODO: flags
+        // TODO flags
         return false;
     }
 
     @Override
     public boolean hasDirectionKeys()
     {
-        // TODO: flags
+        // TODO flags
         return false;
     }
 
     @Override
     public boolean reversedDirection()
     {
-        // TODO: flags
+        // TODO flags
         return false;
     }
 
