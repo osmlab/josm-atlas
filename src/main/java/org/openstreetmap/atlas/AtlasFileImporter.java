@@ -38,7 +38,7 @@ public class AtlasFileImporter extends FileImporter
 
     public AtlasFileImporter()
     {
-        super(new ExtensionFileFilter("atlas,atlas.gz", "atlas", tr("Atlas file") + " (*.atlas"));
+        super(new ExtensionFileFilter("atlas,atlas.gz", "atlas", tr("Atlas file") + " (*.atlas)"));
     }
 
     public AtlasReaderLayer getLayer()
