@@ -83,7 +83,9 @@ public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual
 
     public AtlasDataSet()
     {
-        // Do nothing
+        selectionDs.setUploadPolicy(UploadPolicy.BLOCKED);
+        selectionDs.setDownloadPolicy(DownloadPolicy.BLOCKED);
+        selectionDs.lock();
     }
 
     @Override
@@ -105,7 +107,7 @@ public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual
     }
 
     @Override
-    public final boolean isLocked()
+    public boolean isLocked()
     {
         return true;
     }
@@ -388,8 +390,10 @@ public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual
     {
         synchronized (selectionLock)
         {
+            selectionDs.unlock();
             selectionDs.clear();
             final SelectionChangeEvent event = command.apply(currentSelectedPrimitives);
+            selectionDs.lock();
             if (event.isNop())
             {
                 return false;
