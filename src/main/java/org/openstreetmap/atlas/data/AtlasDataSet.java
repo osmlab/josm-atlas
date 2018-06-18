@@ -105,7 +105,7 @@ public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual
     }
 
     @Override
-    public boolean isLocked()
+    public final boolean isLocked()
     {
         return true;
     }
