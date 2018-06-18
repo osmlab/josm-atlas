@@ -20,6 +20,7 @@ import org.openstreetmap.josm.data.osm.visitor.PrimitiveVisitor;
 
 /**
  * Atlas punctual item
+ * 
  * @author Vincent Privat
  */
 public abstract class AtlasPunctual extends AtlasPrimitive implements INode

@@ -6,6 +6,7 @@ import org.openstreetmap.josm.data.coor.LatLon;
 
 /**
  * Atlas point
+ * 
  * @author Vincent Privat
  */
 public class AtlasPoint extends AtlasPunctual
@@ -28,7 +29,7 @@ public class AtlasPoint extends AtlasPunctual
     @Override
     public String toString()
     {
-        final String coorDesc = isLatLonKnown() ? "lat="+lat()+",lon="+lon() : "";
-        return "{AtlasPoint id=" + getUniqueId() + ' ' + getFlagsAsString() + ' ' + coorDesc+'}';
+        final String coorDesc = isLatLonKnown() ? "lat=" + lat() + ",lon=" + lon() : "";
+        return "{AtlasPoint id=" + getUniqueId() + ' ' + getFlagsAsString() + ' ' + coorDesc + '}';
     }
 }

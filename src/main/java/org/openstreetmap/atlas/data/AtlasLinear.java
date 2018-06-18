@@ -18,7 +18,9 @@ import org.openstreetmap.josm.data.osm.visitor.PrimitiveVisitor;
 
 /**
  * Atlas linear item
- * @param <P> type of punctual feature
+ * 
+ * @param <P>
+ *            type of punctual feature
  * @author Vincent Privat
  */
 public abstract class AtlasLinear<P extends AtlasPunctual> extends AtlasPrimitive implements IWay<P>
@@ -110,7 +112,7 @@ public abstract class AtlasLinear<P extends AtlasPunctual> extends AtlasPrimitiv
     public boolean isClosed()
     {
         final int size = nodes.size();
-        return size >= THREE && nodes.get(size-1) == nodes.get(0);
+        return size >= THREE && nodes.get(size - 1) == nodes.get(0);
     }
 
     @Override
@@ -189,7 +191,8 @@ public abstract class AtlasLinear<P extends AtlasPunctual> extends AtlasPrimitiv
             way = new Way(data.getId(), data.getVersion());
             way.setVisible(data.isVisible());
             way.load(data);
-            way.setNodes(getNodes().stream().map(n -> n.toOsmPrimitive(dataSet)).collect(Collectors.toList()));
+            way.setNodes(getNodes().stream().map(n -> n.toOsmPrimitive(dataSet))
+                    .collect(Collectors.toList()));
             addOsmPrimitive(dataSet, way);
         }
         return way;

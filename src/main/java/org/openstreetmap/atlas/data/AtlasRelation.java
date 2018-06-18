@@ -16,6 +16,7 @@ import org.openstreetmap.josm.data.osm.visitor.PrimitiveVisitor;
 
 /**
  * Atlas relation
+ * 
  * @author Vincent Privat
  */
 public class AtlasRelation extends AtlasPrimitive implements IRelation<AtlasRelationMember>
@@ -132,7 +133,8 @@ public class AtlasRelation extends AtlasPrimitive implements IRelation<AtlasRela
     @Override
     public org.openstreetmap.josm.data.osm.Relation toOsmPrimitive(final DataSet dataSet)
     {
-        org.openstreetmap.josm.data.osm.Relation rel = (org.openstreetmap.josm.data.osm.Relation) dataSet.getPrimitiveById(getPrimitiveId());
+        org.openstreetmap.josm.data.osm.Relation rel = (org.openstreetmap.josm.data.osm.Relation) dataSet
+                .getPrimitiveById(getPrimitiveId());
         if (rel == null)
         {
             final RelationData data = new RelationData(getUniqueId());
@@ -140,7 +142,8 @@ public class AtlasRelation extends AtlasPrimitive implements IRelation<AtlasRela
             rel = new org.openstreetmap.josm.data.osm.Relation(data.getId(), data.getVersion());
             rel.setVisible(data.isVisible());
             rel.load(data);
-            rel.setMembers(getMembers().stream().map(m -> m.toRelationMember(dataSet)).collect(Collectors.toList()));
+            rel.setMembers(getMembers().stream().map(m -> m.toRelationMember(dataSet))
+                    .collect(Collectors.toList()));
             addOsmPrimitive(dataSet, rel);
         }
         return rel;

@@ -79,8 +79,8 @@ public class AtlasDataSetBuilder
         monitor.setCustomText("Converting nodes...");
         for (final Node node : atlas.nodes())
         {
-            addOsmNode(dataSet, monitor, node.getIdentifier(), node.getLocation(),
-                    node.relations(), nodeMap, () -> new AtlasNode(node));
+            addOsmNode(dataSet, monitor, node.getIdentifier(), node.getLocation(), node.relations(),
+                    nodeMap, () -> new AtlasNode(node));
         }
     }
 
@@ -100,7 +100,8 @@ public class AtlasDataSetBuilder
     {
         monitor.setCustomText("Converting edges...");
         buildShapePoints(dataSet, monitor,
-                Iterables.stream(atlas.edges()).map(Edge::asPolyLine).collect(), nodeMap, AtlasNode::new);
+                Iterables.stream(atlas.edges()).map(Edge::asPolyLine).collect(), nodeMap,
+                AtlasNode::new);
         for (final Edge edge : atlas.edges())
         {
             final AtlasEdge way = new AtlasEdge(edge);
@@ -137,7 +138,8 @@ public class AtlasDataSetBuilder
     {
         monitor.setCustomText("Converting lines...");
         buildShapePoints(dataSet, monitor,
-                Iterables.stream(atlas.lines()).map(Line::asPolyLine).collect(), pointMap, AtlasPoint::new);
+                Iterables.stream(atlas.lines()).map(Line::asPolyLine).collect(), pointMap,
+                AtlasPoint::new);
         for (final Line line : atlas.lines())
         {
             final AtlasLine way = new AtlasLine(line);
@@ -251,9 +253,9 @@ public class AtlasDataSetBuilder
         return bounds;
     }
 
-    private <L extends LocationItem, N extends AtlasPunctual> void addOsmNode(final AtlasDataSet dataSet,
-            final ProgressMonitor monitor, final long identifier, final Location location,
-            final Iterable<Relation> relations,
+    private <L extends LocationItem, N extends AtlasPunctual> void addOsmNode(
+            final AtlasDataSet dataSet, final ProgressMonitor monitor, final long identifier,
+            final Location location, final Iterable<Relation> relations,
             final Map<Location, N> nodeMap, final Supplier<N> builder)
     {
         if (!nodeMap.containsKey(location))
@@ -287,17 +289,16 @@ public class AtlasDataSetBuilder
         }
     }
 
-    private <N extends AtlasPunctual> void buildShapePoints(
-            final AtlasDataSet dataSet, final ProgressMonitor monitor,
-            final Iterable<PolyLine> polyLines,
+    private <N extends AtlasPunctual> void buildShapePoints(final AtlasDataSet dataSet,
+            final ProgressMonitor monitor, final Iterable<PolyLine> polyLines,
             final Map<Location, N> nodeMap, final Function<Location, N> builder)
     {
         for (final PolyLine polyLine : polyLines)
         {
             for (final Location shapePoint : polyLine)
             {
-                addOsmNode(dataSet, monitor, -1, shapePoint, new ArrayList<>(),
-                        nodeMap, () -> builder.apply(shapePoint));
+                addOsmNode(dataSet, monitor, -1, shapePoint, new ArrayList<>(), nodeMap,
+                        () -> builder.apply(shapePoint));
             }
         }
     }

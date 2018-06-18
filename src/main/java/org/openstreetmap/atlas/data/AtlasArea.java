@@ -4,6 +4,7 @@ import org.openstreetmap.atlas.geography.atlas.items.Area;
 
 /**
  * Atlas area
+ * 
  * @author Vincent Privat
  */
 public class AtlasArea extends AtlasLinear<AtlasPoint>

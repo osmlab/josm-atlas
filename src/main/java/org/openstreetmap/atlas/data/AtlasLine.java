@@ -4,6 +4,7 @@ import org.openstreetmap.atlas.geography.atlas.items.Line;
 
 /**
  * Atlas line
+ * 
  * @author Vincent Privat
  */
 public class AtlasLine extends AtlasLinear<AtlasPoint>

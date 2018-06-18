@@ -9,6 +9,7 @@ import org.openstreetmap.josm.data.osm.OsmPrimitiveType;
 
 /**
  * Atlas relation member
+ * 
  * @author Vincent Privat
  */
 public class AtlasRelationMember implements IRelationMember<AtlasPrimitive>
@@ -70,8 +71,10 @@ public class AtlasRelationMember implements IRelationMember<AtlasPrimitive>
         return primitive;
     }
 
-    public final org.openstreetmap.josm.data.osm.RelationMember toRelationMember(final DataSet dataSet)
+    public final org.openstreetmap.josm.data.osm.RelationMember toRelationMember(
+            final DataSet dataSet)
     {
-        return new org.openstreetmap.josm.data.osm.RelationMember(getRole(), getMember().toOsmPrimitive(dataSet));
+        return new org.openstreetmap.josm.data.osm.RelationMember(getRole(),
+                getMember().toOsmPrimitive(dataSet));
     }
 }

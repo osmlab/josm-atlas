@@ -34,7 +34,8 @@ import org.openstreetmap.josm.tools.ImageProvider;
 /**
  * @author jgage
  */
-public class AtlasReaderLayer extends AbstractOsmDataLayer implements DataSelectionListener, ActiveLayerChangeListener, HistoryHook
+public class AtlasReaderLayer extends AbstractOsmDataLayer
+        implements DataSelectionListener, ActiveLayerChangeListener, HistoryHook
 {
     private static final String LAYER_NAME = tr("Atlas Layer");
 
@@ -118,10 +119,12 @@ public class AtlasReaderLayer extends AbstractOsmDataLayer implements DataSelect
     public void paint(final Graphics2D g2d, final MapView map, final Bounds bbox)
     {
         final boolean active = map.getLayerManager().getActiveLayer() == this;
-        final boolean inactive = !active && Config.getPref().getBoolean("draw.data.inactive_color", true);
+        final boolean inactive = !active
+                && Config.getPref().getBoolean("draw.data.inactive_color", true);
         final boolean virtual = !inactive && map.isVirtualNodesEnabled();
 
-        final Rendering painter = MapRendererFactory.getInstance().createActiveRenderer(g2d, map, inactive);
+        final Rendering painter = MapRendererFactory.getInstance().createActiveRenderer(g2d, map,
+                inactive);
         painter.render(data, virtual, bbox);
     }
 
@@ -152,8 +155,8 @@ public class AtlasReaderLayer extends AbstractOsmDataLayer implements DataSelect
             if (data.getPrimitiveById(pid) != null)
             {
                 iter.set(new SimplePrimitiveId(
-                        Long.parseLong(String.valueOf(pid.getUniqueId()).substring(
-                                0, OsmPrimitiveType.NODE.equals(pid.getType()) ? TEN : NINE)),
+                        Long.parseLong(String.valueOf(pid.getUniqueId()).substring(0,
+                                OsmPrimitiveType.NODE.equals(pid.getType()) ? TEN : NINE)),
                         pid.getType()));
             }
         }
@@ -166,7 +169,7 @@ public class AtlasReaderLayer extends AbstractOsmDataLayer implements DataSelect
         {
             data.addSelectionListener(SelectionEventManager.getInstance());
         }
-        else 
+        else
         {
             data.removeSelectionListener(SelectionEventManager.getInstance());
         }

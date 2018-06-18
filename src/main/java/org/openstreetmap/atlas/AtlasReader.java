@@ -17,6 +17,6 @@ public class AtlasReader extends Plugin
         this.atlasFileImporter = new AtlasFileImporter();
         ExtensionFileFilter.addImporter(this.atlasFileImporter);
         ExtensionFileFilter.updateAllFormatsImporter();
-        
+
     }
 }

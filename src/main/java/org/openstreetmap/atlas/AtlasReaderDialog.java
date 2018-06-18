@@ -507,7 +507,8 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                 if (selected != null)
                 {
                     selected.setHighlighted(true);
-                    AtlasReaderDialog.this.layer.getDataSet().setSelected(selected.getPrimitiveId());
+                    AtlasReaderDialog.this.layer.getDataSet()
+                            .setSelected(selected.getPrimitiveId());
                     AtlasReaderDialog.this.layer.invalidate();
                     try
                     {
@@ -687,7 +688,8 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
             {
                 // show entire Atlas
                 final BoundingXYVisitor visitor = new BoundingXYVisitor();
-                visitor.computeBoundingBox(AtlasReaderDialog.this.layer.getDataSet().allPrimitives());
+                visitor.computeBoundingBox(
+                        AtlasReaderDialog.this.layer.getDataSet().allPrimitives());
                 MainApplication.getMap().mapView.zoomTo(visitor.getBounds());
             }
         };

@@ -6,6 +6,7 @@ import org.openstreetmap.josm.data.coor.LatLon;
 
 /**
  * Atlas node
+ * 
  * @author Vincent Privat
  */
 public class AtlasNode extends AtlasPunctual
@@ -28,7 +29,7 @@ public class AtlasNode extends AtlasPunctual
     @Override
     public String toString()
     {
-        final String coorDesc = isLatLonKnown() ? "lat="+lat()+",lon="+lon() : "";
-        return "{AtlasNode id=" + getUniqueId() + ' ' + getFlagsAsString() + ' ' + coorDesc+'}';
+        final String coorDesc = isLatLonKnown() ? "lat=" + lat() + ",lon=" + lon() : "";
+        return "{AtlasNode id=" + getUniqueId() + ' ' + getFlagsAsString() + ' ' + coorDesc + '}';
     }
 }

@@ -112,7 +112,7 @@ public class AtlasFileImporter extends FileImporter
             final Bounds bounds = builder.getBounds();
             this.layer = new AtlasReaderLayer("Atlas: " + this.atlas.getName(), data, this.atlas,
                     bounds);
-    
+
             GuiHelper.runInEDT(() ->
             {
                 MainApplication.getLayerManager().addLayer(this.layer);

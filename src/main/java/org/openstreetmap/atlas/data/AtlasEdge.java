@@ -4,6 +4,7 @@ import org.openstreetmap.atlas.geography.atlas.items.Edge;
 
 /**
  * Atlas edge
+ * 
  * @author Vincent Privat
  */
 public class AtlasEdge extends AtlasLinear<AtlasNode>

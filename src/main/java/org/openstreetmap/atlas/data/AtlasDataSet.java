@@ -44,14 +44,16 @@ import org.openstreetmap.josm.tools.SubclassFilteredCollection;
 
 /**
  * Atlas data set
+ * 
  * @author Vincent Privat
  */
-public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual, AtlasLinear<AtlasPunctual>, AtlasRelation>
+public final class AtlasDataSet
+        implements OsmData<AtlasPrimitive, AtlasPunctual, AtlasLinear<AtlasPunctual>, AtlasRelation>
 {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final QuadBucketPrimitiveStore<AtlasPunctual, AtlasLinear<AtlasPunctual>, AtlasRelation> store = 
-            new QuadBucketPrimitiveStore<>();
-    private final Storage<AtlasPrimitive> allPrimitives = new Storage<>(new Storage.PrimitiveIdHash(), true);
+    private final QuadBucketPrimitiveStore<AtlasPunctual, AtlasLinear<AtlasPunctual>, AtlasRelation> store = new QuadBucketPrimitiveStore<>();
+    private final Storage<AtlasPrimitive> allPrimitives = new Storage<>(
+            new Storage.PrimitiveIdHash(), true);
     private final Map<PrimitiveId, AtlasPrimitive> primitivesMap = allPrimitives
             .foreignKey(new Storage.PrimitiveIdHash());
 
@@ -67,9 +69,8 @@ public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual
     private final Object selectionLock = new Object();
 
     /**
-     * The current selected primitives. This is always a unmodifiable set.
-     *
-     * The set should be ordered in the order in which the primitives have been added to the selection.
+     * The current selected primitives. This is always a unmodifiable set. The set should be ordered
+     * in the order in which the primitives have been added to the selection.
      */
     private Set<AtlasPrimitive> currentSelectedPrimitives = Collections.emptySet();
 
@@ -142,7 +143,8 @@ public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual
 
         allPrimitives.add(primitive);
         primitive.setDataset(this);
-        // Set cached bbox for way and relation (required for reindexWay and reindexRelation to work properly)
+        // Set cached bbox for way and relation (required for reindexWay and reindexRelation to work
+        // properly)
         primitive.updatePosition();
         store.addPrimitive(primitive);
     }
@@ -203,7 +205,9 @@ public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual
 
     /**
      * Show message and stack trace in log in case primitive is not found
-     * @param primitiveId primitive id to look for
+     * 
+     * @param primitiveId
+     *            primitive id to look for
      * @return Primitive by id.
      */
     private AtlasPrimitive getPrimitiveByIdChecked(final PrimitiveId primitiveId)
@@ -214,13 +218,14 @@ public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual
             Logging.warn(tr(
                     "JOSM expected to find primitive [{0} {1}] in dataset but it is not there. Please report this "
                             + "at {2}. This is not a critical error, it should be safe to continue in your work.",
-                    primitiveId.getType(), Long.toString(primitiveId.getUniqueId()), Main.getJOSMWebsite()));
+                    primitiveId.getType(), Long.toString(primitiveId.getUniqueId()),
+                    Main.getJOSMWebsite()));
             Logging.error(new Exception());
         }
 
         return result;
     }
-    
+
     @Override
     public <T extends AtlasPrimitive> Collection<T> getPrimitives(
             final Predicate<? super AtlasPrimitive> predicate)
@@ -354,7 +359,8 @@ public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual
 
     private void toggleSelected(final Stream<? extends PrimitiveId> stream)
     {
-        doSelectionChange(old -> new SelectionToggleEvent(selectionDs, toOsmPrimitives(old), toOsmPrimitives(stream)));
+        doSelectionChange(old -> new SelectionToggleEvent(selectionDs, toOsmPrimitives(old),
+                toOsmPrimitives(stream)));
     }
 
     private Set<OsmPrimitive> toOsmPrimitives(final Set<AtlasPrimitive> set)
@@ -364,14 +370,14 @@ public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual
 
     private Stream<OsmPrimitive> toOsmPrimitives(final Stream<? extends PrimitiveId> stream)
     {
-        return stream.map(this::getPrimitiveByIdChecked).filter(Objects::nonNull).map(p -> p.toOsmPrimitive(selectionDs));
+        return stream.map(this::getPrimitiveByIdChecked).filter(Objects::nonNull)
+                .map(p -> p.toOsmPrimitive(selectionDs));
     }
 
     private AtlasPrimitive toAtlasPrimitive(final OsmPrimitive osm)
     {
         return getPrimitiveByIdChecked(new SimplePrimitiveId(
-                Long.parseLong(osm.get(AtlasPrimitive.ATLAS_ID)),
-                osm.getType()));
+                Long.parseLong(osm.get(AtlasPrimitive.ATLAS_ID)), osm.getType()));
     }
 
     private Set<AtlasPrimitive> toAtlasPrimitives(final Set<OsmPrimitive> set)
@@ -383,10 +389,14 @@ public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual
      * Do a selection change.
      * <p>
      * This is the only method that changes the current selection state.
-     * @param command A generator that generates the {@link SelectionChangeEvent} for the given base set of currently selected primitives.
+     * 
+     * @param command
+     *            A generator that generates the {@link SelectionChangeEvent} for the given base set
+     *            of currently selected primitives.
      * @return true iff the command did change the selection.
      */
-    private boolean doSelectionChange(final Function<Set<AtlasPrimitive>, SelectionChangeEvent> command)
+    private boolean doSelectionChange(
+            final Function<Set<AtlasPrimitive>, SelectionChangeEvent> command)
     {
         synchronized (selectionLock)
         {
@@ -418,7 +428,8 @@ public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual
 
     private void setSelected(final Stream<? extends PrimitiveId> stream)
     {
-        doSelectionChange(old -> new SelectionReplaceEvent(selectionDs, toOsmPrimitives(old), toOsmPrimitives(stream)));
+        doSelectionChange(old -> new SelectionReplaceEvent(selectionDs, toOsmPrimitives(old),
+                toOsmPrimitives(stream)));
     }
 
     @Override
@@ -435,7 +446,8 @@ public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual
 
     private void addSelected(final Stream<? extends PrimitiveId> stream)
     {
-        doSelectionChange(old -> new SelectionAddEvent(selectionDs, toOsmPrimitives(old), toOsmPrimitives(stream)));
+        doSelectionChange(old -> new SelectionAddEvent(selectionDs, toOsmPrimitives(old),
+                toOsmPrimitives(stream)));
     }
 
     @Override
@@ -452,7 +464,8 @@ public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual
 
     private void clearSelection(final Stream<? extends PrimitiveId> stream)
     {
-        doSelectionChange(old -> new SelectionRemoveEvent(selectionDs, toOsmPrimitives(old), toOsmPrimitives(stream)));
+        doSelectionChange(old -> new SelectionRemoveEvent(selectionDs, toOsmPrimitives(old),
+                toOsmPrimitives(stream)));
     }
 
     @Override
@@ -474,17 +487,17 @@ public final class AtlasDataSet implements OsmData<AtlasPrimitive, AtlasPunctual
     }
 
     /**
-     * Returns mappaint cache index for this DataSet.
-     *
-     * If the {@link OsmPrimitive#mappaintCacheIdx} is not equal to the DataSet mappaint
-     * cache index, this means the cache for that primitive is out of date.
+     * Returns mappaint cache index for this DataSet. If the {@link OsmPrimitive#mappaintCacheIdx}
+     * is not equal to the DataSet mappaint cache index, this means the cache for that primitive is
+     * out of date.
+     * 
      * @return mappaint cache index
      */
     public short getMappaintCacheIndex()
     {
         return mappaintCacheIdx;
     }
-    
+
     @Override
     public void clearMappaintCache()
     {

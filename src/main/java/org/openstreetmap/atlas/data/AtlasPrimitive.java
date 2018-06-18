@@ -30,6 +30,7 @@ import org.openstreetmap.josm.tools.Utils;
 
 /**
  * Atlas primitive
+ * 
  * @author Vincent Privat
  */
 public abstract class AtlasPrimitive implements IPrimitive
@@ -38,13 +39,12 @@ public abstract class AtlasPrimitive implements IPrimitive
 
     /** the parent dataset */
     private AtlasDataSet dataSet;
-    
+
     private final AtlasEntity item;
 
     /**
-     * Unique identifier in OSM. This is used to identify objects on the server.
-     * An id of 0 means an unknown id. The object has not been uploaded yet to
-     * know what id it will get.
+     * Unique identifier in OSM. This is used to identify objects on the server. An id of 0 means an
+     * unknown id. The object has not been uploaded yet to know what id it will get.
      */
     private long identifier;
 
@@ -57,6 +57,7 @@ public abstract class AtlasPrimitive implements IPrimitive
 
     /**
      * Generates a new primitive unique id.
+     * 
      * @return new primitive unique (negative) id
      */
     static long generateUniqueId()
@@ -345,12 +346,15 @@ public abstract class AtlasPrimitive implements IPrimitive
 
     /**
      * Return true, if this primitive is a node referred by at least n ways
-     * @param count Minimal number of ways to return true. Must be positive
+     * 
+     * @param count
+     *            Minimal number of ways to return true. Must be positive
      * @return {@code true} if this primitive is referred by at least n ways
      */
     protected final boolean isNodeReferredByWays(final int count)
     {
-        // Count only referrers that are members of the same dataset (primitive can have some fake references, for example
+        // Count only referrers that are members of the same dataset (primitive can have some fake
+        // references, for example
         // when way is cloned
         if (referrers == null)
         {
@@ -359,7 +363,8 @@ public abstract class AtlasPrimitive implements IPrimitive
         checkDataset();
         if (referrers instanceof AtlasPrimitive)
         {
-            return count <= 1 && referrers instanceof Way && ((AtlasPrimitive) referrers).dataSet == dataSet;
+            return count <= 1 && referrers instanceof Way
+                    && ((AtlasPrimitive) referrers).dataSet == dataSet;
         }
         else
         {
@@ -377,7 +382,9 @@ public abstract class AtlasPrimitive implements IPrimitive
 
     /**
      * Add new referrer. If referrer is already included then no action is taken
-     * @param referrer The referrer to add
+     * 
+     * @param referrer
+     *            The referrer to add
      */
     protected void addReferrer(final AtlasPrimitive referrer)
     {
@@ -389,7 +396,7 @@ public abstract class AtlasPrimitive implements IPrimitive
         {
             if (referrers != referrer)
             {
-                referrers = new AtlasPrimitive[] {(AtlasPrimitive) referrers, referrer};
+                referrers = new AtlasPrimitive[] { (AtlasPrimitive) referrers, referrer };
             }
         }
         else
@@ -409,7 +416,7 @@ public abstract class AtlasPrimitive implements IPrimitive
     public void setHighlighted(final boolean highlighted)
     {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
@@ -450,7 +457,8 @@ public abstract class AtlasPrimitive implements IPrimitive
     @Override
     public final List<? extends IPrimitive> getReferrers(final boolean allowWithoutDataset)
     {
-        // Returns only referrers that are members of the same dataset (primitive can have some fake references, for example
+        // Returns only referrers that are members of the same dataset (primitive can have some fake
+        // references, for example
         // when way is cloned
 
         if (dataSet == null && allowWithoutDataset)
@@ -473,7 +481,7 @@ public abstract class AtlasPrimitive implements IPrimitive
             }
             else
             {
-                for (final AtlasPrimitive osm: (AtlasPrimitive[]) referrers)
+                for (final AtlasPrimitive osm : (AtlasPrimitive[]) referrers)
                 {
                     if (dataSet == osm.dataSet)
                     {
@@ -486,14 +494,18 @@ public abstract class AtlasPrimitive implements IPrimitive
     }
 
     /**
-     * This method should never ever by called from somewhere else than AtlasDataSet.addPrimitive or removePrimitive methods
-     * @param dataSet the parent dataset
+     * This method should never ever by called from somewhere else than AtlasDataSet.addPrimitive or
+     * removePrimitive methods
+     * 
+     * @param dataSet
+     *            the parent dataset
      */
     final void setDataset(final AtlasDataSet dataSet)
     {
         if (this.dataSet != null && dataSet != null && this.dataSet != dataSet)
         {
-            throw new DataIntegrityProblemException("Primitive cannot be included in more than one AtlasDataSet");
+            throw new DataIntegrityProblemException(
+                    "Primitive cannot be included in more than one AtlasDataSet");
         }
         this.dataSet = dataSet;
     }
@@ -511,10 +523,11 @@ public abstract class AtlasPrimitive implements IPrimitive
     {
         if (dataSet == null)
         {
-            throw new DataIntegrityProblemException("Primitive must be part of the dataset: " + toString());
+            throw new DataIntegrityProblemException(
+                    "Primitive must be part of the dataset: " + toString());
         }
     }
-    
+
     @Override
     public boolean isSelected()
     {
@@ -560,19 +573,23 @@ public abstract class AtlasPrimitive implements IPrimitive
     }
 
     /**
-     * Called by AtlasDataset to update cached position information of primitive (bbox, cached EarthNorth, ...)
+     * Called by AtlasDataset to update cached position information of primitive (bbox, cached
+     * EarthNorth, ...)
      */
     public abstract void updatePosition();
 
     /**
      * If necessary, extend the bbox to contain this primitive
-     * @param box a bbox instance
-     * @param visited a set of visited members  or null
+     * 
+     * @param box
+     *            a bbox instance
+     * @param visited
+     *            a set of visited members or null
      */
     protected abstract void addToBBox(BBox box, Set<PrimitiveId> visited);
 
     public abstract OsmPrimitive toOsmPrimitive(DataSet dataSet);
-    
+
     protected final void addOsmPrimitive(final DataSet dataSet, final OsmPrimitive osm)
     {
         osm.put(ATLAS_ID, Long.toString(getUniqueId()));
