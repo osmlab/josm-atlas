@@ -10,6 +10,7 @@ import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import org.openstreetmap.atlas.data.AtlasDataSet;
 import org.openstreetmap.atlas.geography.atlas.Atlas;
 import org.openstreetmap.atlas.geography.atlas.AtlasResourceLoader;
 import org.openstreetmap.atlas.utilities.collections.Iterables;
@@ -17,7 +18,6 @@ import org.openstreetmap.atlas.utilities.scalars.Duration;
 import org.openstreetmap.atlas.utilities.time.Time;
 import org.openstreetmap.josm.actions.ExtensionFileFilter;
 import org.openstreetmap.josm.data.Bounds;
-import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.io.importexport.FileImporter;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
@@ -38,7 +38,7 @@ public class AtlasFileImporter extends FileImporter
 
     public AtlasFileImporter()
     {
-        super(new ExtensionFileFilter("atlas,atlas.gz", "atlas", tr("Atlas file") + " (*.atlas"));
+        super(new ExtensionFileFilter("atlas,atlas.gz", "atlas", tr("Atlas file") + " (*.atlas)"));
     }
 
     public AtlasReaderLayer getLayer()
@@ -66,7 +66,7 @@ public class AtlasFileImporter extends FileImporter
         }
         final AtlasDataSetBuilder builder = new AtlasDataSetBuilder();
         final long start = System.currentTimeMillis();
-        final DataSet data = builder.build(this.atlas, monitor);
+        final AtlasDataSet data = builder.build(this.atlas, monitor);
         final long completedIn = System.currentTimeMillis() - start;
         logger.info("Completed in: {} miliseconds", completedIn);
         final Bounds bounds = builder.getBounds();
@@ -94,29 +94,40 @@ public class AtlasFileImporter extends FileImporter
         {
             this.atlas = new AtlasResourceLoader().load(Iterables.stream(files)
                     .map(file -> new org.openstreetmap.atlas.streaming.resource.File(file)));
-
         }
         catch (final Exception e)
         {
+            Logging.error(e);
             JOptionPane.showMessageDialog(null, e.toString(), "Corrupt Atlas File",
                     JOptionPane.ERROR_MESSAGE);
+            return;
         }
-        final AtlasDataSetBuilder builder = new AtlasDataSetBuilder();
-        final Time start = Time.now();
-        final DataSet data = builder.build(this.atlas, monitor);
-        final Duration completedIn = start.elapsedSince();
-        logger.info("Completed in: {}", completedIn);
-        final Bounds bounds = builder.getBounds();
-        this.layer = new AtlasReaderLayer("Atlas: " + this.atlas.getName(), data, this.atlas,
-                bounds);
-
-        GuiHelper.runInEDT(() ->
+        try
         {
-            MainApplication.getLayerManager().addLayer(this.layer);
-            MainApplication.getLayerManager().setActiveLayer(this.layer);
-            final AtlasReaderDialog dialog = new AtlasReaderDialog(this.layer);
-            MainApplication.getMap().addToggleDialog(dialog);
-        });
+            final AtlasDataSetBuilder builder = new AtlasDataSetBuilder();
+            final Time start = Time.now();
+            final AtlasDataSet data = builder.build(this.atlas, monitor);
+            final Duration completedIn = start.elapsedSince();
+            logger.info("Completed in: {}", completedIn);
+            final Bounds bounds = builder.getBounds();
+            this.layer = new AtlasReaderLayer("Atlas: " + this.atlas.getName(), data, this.atlas,
+                    bounds);
+
+            GuiHelper.runInEDT(() ->
+            {
+                MainApplication.getLayerManager().addLayer(this.layer);
+                MainApplication.getLayerManager().setActiveLayer(this.layer);
+                final AtlasReaderDialog dialog = new AtlasReaderDialog(this.layer);
+                MainApplication.getMap().addToggleDialog(dialog);
+            });
+        }
+        catch (final Exception e)
+        {
+            Logging.error(e);
+            JOptionPane.showMessageDialog(null, e.toString(), "Plugin error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
     }
 
     @Override

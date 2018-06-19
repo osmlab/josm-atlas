@@ -10,7 +10,6 @@ import java.awt.event.MouseListener;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.TreeSet;
 
 import javax.swing.AbstractAction;
@@ -27,6 +26,9 @@ import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 
 import org.openstreetmap.atlas.AtlasSearch.SearchType;
+import org.openstreetmap.atlas.data.AtlasDataSet;
+import org.openstreetmap.atlas.data.AtlasPrimitive;
+import org.openstreetmap.atlas.data.AtlasPunctual;
 import org.openstreetmap.atlas.exception.CoreException;
 import org.openstreetmap.atlas.geography.Latitude;
 import org.openstreetmap.atlas.geography.Location;
@@ -41,17 +43,15 @@ import org.openstreetmap.atlas.geography.atlas.items.Point;
 import org.openstreetmap.atlas.geography.atlas.packed.PackedEdge;
 import org.openstreetmap.atlas.utilities.scalars.Distance;
 import org.openstreetmap.josm.data.coor.LatLon;
-import org.openstreetmap.josm.data.osm.Node;
-import org.openstreetmap.josm.data.osm.OsmPrimitive;
+import org.openstreetmap.josm.data.osm.INode;
+import org.openstreetmap.josm.data.osm.IRelation;
+import org.openstreetmap.josm.data.osm.IWay;
 import org.openstreetmap.josm.data.osm.OsmPrimitiveType;
 import org.openstreetmap.josm.data.osm.PrimitiveId;
-import org.openstreetmap.josm.data.osm.Relation;
-import org.openstreetmap.josm.data.osm.Way;
 import org.openstreetmap.josm.data.osm.visitor.BoundingXYVisitor;
 import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.dialogs.DialogsPanel;
 import org.openstreetmap.josm.gui.dialogs.ToggleDialog;
-import org.openstreetmap.josm.gui.history.HistoryBrowserDialogManager;
 import org.openstreetmap.josm.gui.layer.LayerManager.LayerAddEvent;
 import org.openstreetmap.josm.gui.layer.LayerManager.LayerChangeListener;
 import org.openstreetmap.josm.gui.layer.LayerManager.LayerOrderChangeEvent;
@@ -72,10 +72,10 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
      */
     public static class PrintablePrimitive
     {
-        private final OsmPrimitive osmPrimitive;
+        private final AtlasPrimitive osmPrimitive;
         private final long index;
 
-        public PrintablePrimitive(final long index, final OsmPrimitive osmPrimitive)
+        public PrintablePrimitive(final long index, final AtlasPrimitive osmPrimitive)
         {
             this.osmPrimitive = osmPrimitive;
             this.index = index;
@@ -86,7 +86,7 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
             return this.index;
         }
 
-        public OsmPrimitive getOsmPrimitive()
+        public AtlasPrimitive getOsmPrimitive()
         {
             return this.osmPrimitive;
         }
@@ -206,7 +206,7 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
     private static boolean listClick = false;
     private static final long serialVersionUID = 2182365950017249421L;
     private static final int num = 150;
-    private static OsmPrimitive previous;
+    private static AtlasPrimitive previous;
     private static final int TEXT_FIELD_LENGTH = 15;
 
     private final AtlasReaderLayer layer;
@@ -246,8 +246,9 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
         this.layer = layer;
         this.panel = new JPanel(new BorderLayout());
         this.panel.setName("AtlasReader Panel");
-        if (layer != null && layer.getData() != null && layer.getData().allPrimitives() != null
-                && !layer.getData().allPrimitives().isEmpty())
+        final AtlasDataSet data = layer.getDataSet();
+        if (layer != null && data != null && data.allPrimitives() != null
+                && !data.allPrimitives().isEmpty())
         {
             add(this.panel, BorderLayout.CENTER);
 
@@ -255,9 +256,9 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
             final BiMap<Integer, PrimitiveId> indexToIdentifier = HashBiMap.create();
             int index = 0;
 
-            for (final OsmPrimitive osmPrimitive : layer.getData().allPrimitives())
+            for (final AtlasPrimitive osmPrimitive : data.allPrimitives())
             {
-                if (osmPrimitive instanceof Node)
+                if (osmPrimitive instanceof AtlasPunctual)
                 {
                     if (osmPrimitive.getKeys().isEmpty())
                     {
@@ -322,7 +323,7 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
             {
                 final AtlasSearch searcher = new AtlasSearch(
                         AtlasReaderDialog.this.layer.getAtlas(),
-                        AtlasReaderDialog.this.layer.getData(), SearchType.ALL,
+                        AtlasReaderDialog.this.layer.getDataSet(), SearchType.ALL,
                         AtlasReaderDialog.this.listAll,
                         AtlasReaderDialog.this.indexToIdentifierAll);
                 final DefaultListModel<PrintablePrimitive> results;
@@ -347,7 +348,7 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                                     .setHighlighted(false);
                         }
                     }
-                    AtlasReaderDialog.this.layer.getData().setSelected();
+                    AtlasReaderDialog.this.layer.getDataSet().setSelected();
 
                     // recreate list listeners with new list index (results of search)
                     createListListeners(searcher.getIndexToIdentifier());
@@ -380,10 +381,10 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                         .locationToIndex(event.getPoint());
                 final PrimitiveId identifier = indexToIdentifier
                         .get(AtlasReaderDialog.this.selectedIndex);
-                AtlasReaderDialog.this.layer.getData().setSelected(identifier);
+                AtlasReaderDialog.this.layer.getDataSet().setSelected(identifier);
                 if (identifier != null)
                 {
-                    zoomTo(AtlasReaderDialog.this.layer.getData().getPrimitiveById(identifier));
+                    zoomTo(AtlasReaderDialog.this.layer.getDataSet().getPrimitiveById(identifier));
                 }
             }
         });
@@ -393,8 +394,8 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
             {
                 final int index = listSelectionEvent.getFirstIndex();
                 final PrimitiveId identifier = indexToIdentifier.get(index);
-                this.layer.getData().setSelected(identifier);
-                zoomTo(this.layer.getData().getPrimitiveById(identifier));
+                this.layer.getDataSet().setSelected(identifier);
+                zoomTo(this.layer.getDataSet().getPrimitiveById(identifier));
             }
         });
 
@@ -414,8 +415,8 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                 AtlasReaderDialog.this.list.setSelectedIndex(AtlasReaderDialog.this.selectedIndex);
                 final PrimitiveId identifier = indexToIdentifier
                         .get(AtlasReaderDialog.this.selectedIndex);
-                AtlasReaderDialog.this.layer.getData().setSelected(identifier);
-                zoomTo(AtlasReaderDialog.this.layer.getData().getPrimitiveById(identifier));
+                AtlasReaderDialog.this.layer.getDataSet().setSelected(identifier);
+                zoomTo(AtlasReaderDialog.this.layer.getDataSet().getPrimitiveById(identifier));
                 AtlasReaderDialog.this.list
                         .ensureIndexIsVisible(AtlasReaderDialog.this.selectedIndex);
             }
@@ -434,8 +435,8 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                 AtlasReaderDialog.this.list.setSelectedIndex(AtlasReaderDialog.this.selectedIndex);
                 final PrimitiveId identifier = indexToIdentifier
                         .get(AtlasReaderDialog.this.selectedIndex);
-                AtlasReaderDialog.this.layer.getData().setSelected(identifier);
-                zoomTo(AtlasReaderDialog.this.layer.getData().getPrimitiveById(identifier));
+                AtlasReaderDialog.this.layer.getDataSet().setSelected(identifier);
+                zoomTo(AtlasReaderDialog.this.layer.getDataSet().getPrimitiveById(identifier));
                 AtlasReaderDialog.this.list
                         .ensureIndexIsVisible(AtlasReaderDialog.this.selectedIndex);
             }
@@ -487,27 +488,27 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                 }
                 if (item == null)
                 {
-                    AtlasReaderDialog.this.layer.getData().setSelected();
+                    AtlasReaderDialog.this.layer.getDataSet().setSelected();
                 }
-                OsmPrimitive selected = null;
+                AtlasPrimitive selected = null;
                 // sets selected primitive
                 if (item instanceof org.openstreetmap.atlas.geography.atlas.items.Node
                         || item instanceof Point)
                 {
-                    selected = AtlasReaderDialog.this.layer.getData()
+                    selected = AtlasReaderDialog.this.layer.getDataSet()
                             .getPrimitiveById(item.getIdentifier(), OsmPrimitiveType.NODE);
                 }
                 if (item instanceof Area || item instanceof Edge || item instanceof Line)
                 {
-                    selected = AtlasReaderDialog.this.layer.getData()
+                    selected = AtlasReaderDialog.this.layer.getDataSet()
                             .getPrimitiveById(item.getIdentifier(), OsmPrimitiveType.WAY);
                 }
                 // highlights selection on map and in list
                 if (selected != null)
                 {
                     selected.setHighlighted(true);
-                    AtlasReaderDialog.this.layer.getData().setSelected(selected.getPrimitiveId());
-                    // Main.map.mapView.repaint();
+                    AtlasReaderDialog.this.layer.getDataSet()
+                            .setSelected(selected.getPrimitiveId());
                     AtlasReaderDialog.this.layer.invalidate();
                     try
                     {
@@ -526,38 +527,6 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
         });
     }
 
-    private void historyButtonInit(final JButton historyButton)
-    {
-        historyButton.addActionListener(event ->
-        {
-            final Collection<OsmPrimitive> selections = this.layer.getData().getSelected();
-            if (!selections.isEmpty())
-            {
-                final OsmPrimitive selected = selections.iterator().next();
-                final long identifier = selected.getId();
-                final String identifierString = String.valueOf(identifier);
-                final Collection<OsmPrimitive> lookup = new ArrayList<>();
-                if (selected instanceof Node)
-                {
-                    final long newIdentifier = Long.parseLong(identifierString.substring(0, 10));
-                    final Node node = new Node();
-                    final int version = 1;
-                    node.setOsmId(newIdentifier, version);
-                    lookup.add(node);
-                }
-                if (selected instanceof Way)
-                {
-                    final long newIdentifier = Long.parseLong(identifierString.substring(0, 9));
-                    final Way way = new Way();
-                    final int version = 1;
-                    way.setOsmId(newIdentifier, version);
-                    lookup.add(way);
-                }
-                HistoryBrowserDialogManager.getInstance().showHistory(lookup);
-            }
-        });
-    }
-
     /*
      * Helper function that lays out dialog window correctly.
      */
@@ -565,8 +534,6 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
     {
         final JTextField searchText = new JTextField(TEXT_FIELD_LENGTH);
         final JButton searchButton = new JButton("Search");
-        final JButton historyButton = new JButton("History");
-        historyButtonInit(historyButton);
         final JButton metaDataButton = new JButton("Meta Data");
         final JButton clearButton = new JButton("Clear Results");
         final JButton showAll = new JButton("Show All");
@@ -595,7 +562,6 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
         final JPanel middleButtons = new JPanel(new BorderLayout());
         searchButtons.add(searchOptions, BorderLayout.WEST);
         searchButtons.add(searchButton, BorderLayout.EAST);
-        extraButtons.add(historyButton, BorderLayout.WEST);
         extraButtons.add(metaDataButton, BorderLayout.EAST);
         middleButtons.add(clearButton, BorderLayout.WEST);
         middleButtons.add(showAll, BorderLayout.EAST);
@@ -623,7 +589,7 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
             {
                 final AtlasSearch searcher = new AtlasSearch(
                         AtlasReaderDialog.this.layer.getAtlas(),
-                        AtlasReaderDialog.this.layer.getData(),
+                        AtlasReaderDialog.this.layer.getDataSet(),
                         SearchType.forName(searchOptions.getSelectedItem().toString()),
                         AtlasReaderDialog.this.listAll,
                         AtlasReaderDialog.this.indexToIdentifierAll);
@@ -643,7 +609,7 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                     // show entire Atlas
                     final BoundingXYVisitor visitor = new BoundingXYVisitor();
                     visitor.computeBoundingBox(
-                            AtlasReaderDialog.this.layer.getData().allPrimitives());
+                            AtlasReaderDialog.this.layer.getDataSet().allPrimitives());
                     MainApplication.getMap().mapView.zoomTo(visitor.getBounds());
 
                     // highlight all search results, unless "all" is the mode
@@ -660,11 +626,11 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
                         final ArrayList<PrimitiveId> toBeSelected = new ArrayList<>();
                         for (int i = 0; i < results.size(); i++)
                         {
-                            final OsmPrimitive result = results.get(i).osmPrimitive;
+                            final AtlasPrimitive result = results.get(i).osmPrimitive;
                             result.setHighlighted(true);
                             toBeSelected.add(result.getPrimitiveId());
                         }
-                        AtlasReaderDialog.this.layer.getData().setSelected(toBeSelected);
+                        AtlasReaderDialog.this.layer.getDataSet().setSelected(toBeSelected);
                         MainApplication.getMap().mapView.revalidate();
                         MainApplication.getMap().mapView.repaint();
                         AtlasReaderDialog.this.previousResults = results;
@@ -722,28 +688,29 @@ public class AtlasReaderDialog extends ToggleDialog implements LayerChangeListen
             {
                 // show entire Atlas
                 final BoundingXYVisitor visitor = new BoundingXYVisitor();
-                visitor.computeBoundingBox(AtlasReaderDialog.this.layer.getData().allPrimitives());
+                visitor.computeBoundingBox(
+                        AtlasReaderDialog.this.layer.getDataSet().allPrimitives());
                 MainApplication.getMap().mapView.zoomTo(visitor.getBounds());
             }
         };
         showAll.addActionListener(showEntireAtlas);
     }
 
-    private void zoomTo(final OsmPrimitive primitive)
+    private void zoomTo(final AtlasPrimitive primitive)
     {
         final BoundingXYVisitor visitor = new BoundingXYVisitor();
-        if (primitive instanceof Way)
+        if (primitive instanceof IWay)
         {
-            visitor.visit((Way) primitive);
+            visitor.visit((IWay<?>) primitive);
         }
 
-        if (primitive instanceof Node)
+        if (primitive instanceof INode)
         {
-            visitor.visit((Node) primitive);
+            visitor.visit((INode) primitive);
         }
-        if (primitive instanceof Relation)
+        if (primitive instanceof IRelation)
         {
-            visitor.visit((Relation) primitive);
+            visitor.visit((IRelation<?>) primitive);
         }
         if (visitor.getBounds() != null)
         {

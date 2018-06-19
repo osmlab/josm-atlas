@@ -1,23 +1,23 @@
 package org.openstreetmap.atlas;
 
 import java.util.HashSet;
+import java.util.Map;
 
 import javax.swing.DefaultListModel;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.openstreetmap.atlas.AtlasReaderDialog.PrintablePrimitive;
+import org.openstreetmap.atlas.data.AtlasDataSet;
+import org.openstreetmap.atlas.data.AtlasLinear;
+import org.openstreetmap.atlas.data.AtlasPrimitive;
+import org.openstreetmap.atlas.data.AtlasPunctual;
+import org.openstreetmap.atlas.data.AtlasRelation;
 import org.openstreetmap.atlas.exception.CoreException;
 import org.openstreetmap.atlas.geography.atlas.Atlas;
 import org.openstreetmap.atlas.utilities.collections.StringList;
 import org.openstreetmap.josm.data.Bounds;
-import org.openstreetmap.josm.data.osm.DataSet;
-import org.openstreetmap.josm.data.osm.Node;
-import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.OsmPrimitiveType;
 import org.openstreetmap.josm.data.osm.PrimitiveId;
-import org.openstreetmap.josm.data.osm.Relation;
-import org.openstreetmap.josm.data.osm.TagMap;
-import org.openstreetmap.josm.data.osm.Way;
 import org.openstreetmap.josm.tools.Logging;
 
 import com.google.common.collect.BiMap;
@@ -64,14 +64,14 @@ public class AtlasSearch
         }
     }
 
-    private final DataSet dataSet;
+    private final AtlasDataSet dataSet;
     private final SearchType mode;
     private BiMap<Integer, PrimitiveId> indexToIdentifier;
     private final DefaultListModel<PrintablePrimitive> listAll;
     private final Atlas atlas;
     private final BiMap<Integer, PrimitiveId> indexToIdentifierAll;
 
-    public AtlasSearch(final Atlas atlas, final DataSet data, final SearchType mode,
+    public AtlasSearch(final Atlas atlas, final AtlasDataSet data, final SearchType mode,
             final DefaultListModel<PrintablePrimitive> listAll,
             final BiMap<Integer, PrimitiveId> indexToIdentifierAll)
     {
@@ -129,8 +129,8 @@ public class AtlasSearch
         final StringList searchTags = StringList.split(tag, " AND ");
         final DefaultListModel<PrintablePrimitive> firstResults = searchByTag(searchTags.get(0));
         final DefaultListModel<PrintablePrimitive> secondResults = searchByTag(searchTags.get(1));
-        final HashSet<OsmPrimitive> firstPrimitives = new HashSet<>();
-        final HashSet<OsmPrimitive> secondPrimitives = new HashSet<>();
+        final HashSet<AtlasPrimitive> firstPrimitives = new HashSet<>();
+        final HashSet<AtlasPrimitive> secondPrimitives = new HashSet<>();
         for (int i = 0; i < firstResults.size(); i++)
         {
             firstPrimitives.add(firstResults.get(i).getOsmPrimitive());
@@ -141,7 +141,7 @@ public class AtlasSearch
         }
         int index = 0;
         this.indexToIdentifier.clear();
-        for (final OsmPrimitive result : firstPrimitives)
+        for (final AtlasPrimitive result : firstPrimitives)
         {
             if (secondPrimitives.contains(result))
             {
@@ -172,19 +172,19 @@ public class AtlasSearch
         final int index = 0;
         if (this.dataSet.getPrimitiveById(osmID, OsmPrimitiveType.NODE) != null)
         {
-            final OsmPrimitive node = this.dataSet.getPrimitiveById(osmID, OsmPrimitiveType.NODE);
+            final AtlasPrimitive node = this.dataSet.getPrimitiveById(osmID, OsmPrimitiveType.NODE);
             results.addElement(new PrintablePrimitive(index, node));
             this.indexToIdentifier.put(index, node.getPrimitiveId());
         }
         else if (this.dataSet.getPrimitiveById(osmID, OsmPrimitiveType.WAY) != null)
         {
-            final OsmPrimitive way = this.dataSet.getPrimitiveById(osmID, OsmPrimitiveType.WAY);
+            final AtlasPrimitive way = this.dataSet.getPrimitiveById(osmID, OsmPrimitiveType.WAY);
             results.addElement(new PrintablePrimitive(index, way));
             this.indexToIdentifier.put(index, way.getPrimitiveId());
         }
         else if (this.dataSet.getPrimitiveById(osmID, OsmPrimitiveType.RELATION) != null)
         {
-            final OsmPrimitive relation = this.dataSet.getPrimitiveById(osmID,
+            final AtlasPrimitive relation = this.dataSet.getPrimitiveById(osmID,
                     OsmPrimitiveType.RELATION);
             results.addElement(new PrintablePrimitive(index, relation));
             this.indexToIdentifier.put(index, relation.getPrimitiveId());
@@ -213,7 +213,7 @@ public class AtlasSearch
                 coordinates[i] = Double.parseDouble(splitBounds[i]);
             }
             final Bounds boundingBox = new Bounds(coordinates);
-            for (final Node node : this.dataSet.getNodes())
+            for (final AtlasPunctual node : this.dataSet.getNodes())
             {
                 // dataSet creates garbage id's for shapepoints, need to filter those nodes
                 if (boundingBox.contains(node.getCoor())
@@ -225,7 +225,7 @@ public class AtlasSearch
                     index++;
                 }
             }
-            for (final Way way : this.dataSet.getWays())
+            for (final AtlasLinear<?> way : this.dataSet.getWays())
             {
                 if (boundingBox.contains(way.getBBox().getCenter()))
                 {
@@ -234,7 +234,7 @@ public class AtlasSearch
                     index++;
                 }
             }
-            for (final Relation relation : this.dataSet.getRelations())
+            for (final AtlasRelation relation : this.dataSet.getRelations())
             {
                 if (boundingBox.contains(relation.getBBox().getCenter()))
                 {
@@ -246,7 +246,7 @@ public class AtlasSearch
         }
         catch (final Exception e)
         {
-            // do nothing
+            Logging.error(e);
         }
         return results;
     }
@@ -279,9 +279,9 @@ public class AtlasSearch
             {
                 val = keyVal.get(1);
             }
-            for (final Node node : this.dataSet.getNodes())
+            for (final AtlasPunctual node : this.dataSet.getNodes())
             {
-                final TagMap keyMap = node.getKeys();
+                final Map<String, String> keyMap = node.getKeys();
                 if (keyMap.containsValue(val) && keyMap.containsKey(key))
                 {
                     results.addElement(new PrintablePrimitive(index, node));
@@ -289,9 +289,9 @@ public class AtlasSearch
                     index++;
                 }
             }
-            for (final Way way : this.dataSet.getWays())
+            for (final AtlasLinear<?> way : this.dataSet.getWays())
             {
-                final TagMap keyMap = way.getKeys();
+                final Map<String, String> keyMap = way.getKeys();
                 if (keyMap.containsValue(val) && keyMap.containsKey(key))
                 {
                     results.addElement(new PrintablePrimitive(index, way));
@@ -299,9 +299,9 @@ public class AtlasSearch
                     index++;
                 }
             }
-            for (final Relation relation : this.dataSet.getRelations())
+            for (final AtlasRelation relation : this.dataSet.getRelations())
             {
-                final TagMap keyMap = relation.getKeys();
+                final Map<String, String> keyMap = relation.getKeys();
                 if (keyMap.containsValue(val) && keyMap.containsKey(key))
                 {
                     results.addElement(new PrintablePrimitive(index, relation));
@@ -312,9 +312,9 @@ public class AtlasSearch
         }
         else
         {
-            for (final Node node : this.dataSet.getNodes())
+            for (final AtlasPunctual node : this.dataSet.getNodes())
             {
-                final TagMap keyMap = node.getKeys();
+                final Map<String, String> keyMap = node.getKeys();
                 if (keyMap.containsValue(tag) || keyMap.containsKey(tag))
                 {
                     results.addElement(new PrintablePrimitive(index, node));
@@ -322,9 +322,9 @@ public class AtlasSearch
                     index++;
                 }
             }
-            for (final Way way : this.dataSet.getWays())
+            for (final AtlasLinear<?> way : this.dataSet.getWays())
             {
-                final TagMap keyMap = way.getKeys();
+                final Map<String, String> keyMap = way.getKeys();
                 if (keyMap.containsValue(tag) || keyMap.containsKey(tag))
                 {
                     results.addElement(new PrintablePrimitive(index, way));
@@ -332,9 +332,9 @@ public class AtlasSearch
                     index++;
                 }
             }
-            for (final Relation relation : this.dataSet.getRelations())
+            for (final AtlasRelation relation : this.dataSet.getRelations())
             {
-                final TagMap keyMap = relation.getKeys();
+                final Map<String, String> keyMap = relation.getKeys();
                 if (keyMap.containsValue(tag) || keyMap.containsKey(tag))
                 {
                     results.addElement(new PrintablePrimitive(index, relation));
@@ -354,7 +354,7 @@ public class AtlasSearch
         final DefaultListModel<PrintablePrimitive> results = new DefaultListModel<>();
         this.indexToIdentifier.clear();
         int index = 0;
-        for (final OsmPrimitive primitive : this.dataSet.allPrimitives())
+        for (final AtlasPrimitive primitive : this.dataSet.allPrimitives())
         {
             if (String.valueOf(primitive.getPrimitiveId()).contains(searchText)
                     && primitive.getId() > 0)

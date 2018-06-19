@@ -7,7 +7,6 @@ import org.openstreetmap.josm.plugins.PluginInformation;
 /**
  * @author jgage
  */
-
 public class AtlasReader extends Plugin
 {
     private final AtlasFileImporter atlasFileImporter;
@@ -18,6 +17,6 @@ public class AtlasReader extends Plugin
         this.atlasFileImporter = new AtlasFileImporter();
         ExtensionFileFilter.addImporter(this.atlasFileImporter);
         ExtensionFileFilter.updateAllFormatsImporter();
-    }
 
+    }
 }

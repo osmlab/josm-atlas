@@ -4,8 +4,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
+import org.openstreetmap.atlas.data.AtlasArea;
+import org.openstreetmap.atlas.data.AtlasDataSet;
+import org.openstreetmap.atlas.data.AtlasEdge;
+import org.openstreetmap.atlas.data.AtlasLine;
+import org.openstreetmap.atlas.data.AtlasNode;
+import org.openstreetmap.atlas.data.AtlasPoint;
+import org.openstreetmap.atlas.data.AtlasPrimitive;
+import org.openstreetmap.atlas.data.AtlasPunctual;
+import org.openstreetmap.atlas.data.AtlasRelation;
+import org.openstreetmap.atlas.data.AtlasRelationMember;
 import org.openstreetmap.atlas.geography.Location;
 import org.openstreetmap.atlas.geography.PolyLine;
 import org.openstreetmap.atlas.geography.Polygon;
@@ -20,16 +31,12 @@ import org.openstreetmap.atlas.geography.atlas.items.Point;
 import org.openstreetmap.atlas.geography.atlas.items.Relation;
 import org.openstreetmap.atlas.geography.atlas.items.RelationMember;
 import org.openstreetmap.atlas.utilities.collections.Iterables;
-import org.openstreetmap.atlas.utilities.collections.Maps;
 import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.coor.LatLon;
-import org.openstreetmap.josm.data.osm.DataSet;
-import org.openstreetmap.josm.data.osm.OsmPrimitive;
+import org.openstreetmap.josm.data.osm.DataIntegrityProblemException;
 import org.openstreetmap.josm.data.osm.OsmPrimitiveType;
-import org.openstreetmap.josm.data.osm.Way;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.openstreetmap.josm.tools.Logging;
 
 /**
  * @author jgage
@@ -39,7 +46,6 @@ public class AtlasDataSetBuilder
     // Version of OsmPrimitive, required when setting OsmId in OpenStreetMap
     private static int IDENTIFIER_VERSION = 1;
     private static Bounds bounds;
-    private static Logger logger = LoggerFactory.getLogger(AtlasDataSetBuilder.class);
 
     /**
      * Converts atlas objects to their OSM equivalents and stores them in a dataSet. Currently just
@@ -51,31 +57,56 @@ public class AtlasDataSetBuilder
      *            The progress monitor to monitor loading
      * @return The dataset
      */
-    public DataSet build(final Atlas atlas, final ProgressMonitor monitor)
+    public AtlasDataSet build(final Atlas atlas, final ProgressMonitor monitor)
     {
-        final Map<Location, org.openstreetmap.josm.data.osm.Node> nodeMap = new HashMap<>();
+        final Map<Location, AtlasNode> nodeMap = new HashMap<>();
+        final Map<Location, AtlasPoint> pointMap = new HashMap<>();
+        final AtlasDataSet dataSet = new AtlasDataSet();
+        convertNodes(atlas, monitor, nodeMap, dataSet);
+        convertPoints(atlas, monitor, pointMap, dataSet);
+        convertEdges(atlas, monitor, nodeMap, dataSet);
+        convertLines(atlas, monitor, pointMap, dataSet);
+        convertAreas(atlas, monitor, dataSet);
+        convertRelations(atlas, monitor, dataSet);
+        monitor.setCustomText(
+                "Done adding atlas objects to data set. Please wait for layer to build...");
+        return dataSet;
+    }
+
+    private void convertNodes(final Atlas atlas, final ProgressMonitor monitor,
+            final Map<Location, AtlasNode> nodeMap, final AtlasDataSet dataSet)
+    {
         monitor.setCustomText("Converting nodes...");
-        final DataSet dataSet = new DataSet();
         for (final Node node : atlas.nodes())
         {
-            addOsmNode(dataSet, monitor, node.getIdentifier(), node.getLocation(), node.getTags(),
-                    node.relations(), nodeMap);
-
+            addOsmNode(dataSet, monitor, node.getIdentifier(), node.getLocation(), node.relations(),
+                    nodeMap, () -> new AtlasNode(node));
         }
+    }
+
+    private void convertPoints(final Atlas atlas, final ProgressMonitor monitor,
+            final Map<Location, AtlasPoint> pointMap, final AtlasDataSet dataSet)
+    {
         monitor.setCustomText("Converting points...");
         for (final Point point : atlas.points())
         {
             addOsmNode(dataSet, monitor, point.getIdentifier(), point.getLocation(),
-                    point.getTags(), point.relations(), nodeMap);
+                    point.relations(), pointMap, () -> new AtlasPoint(point));
         }
+    }
+
+    private void convertEdges(final Atlas atlas, final ProgressMonitor monitor,
+            final Map<Location, AtlasNode> nodeMap, final AtlasDataSet dataSet)
+    {
         monitor.setCustomText("Converting edges...");
         buildShapePoints(dataSet, monitor,
-                Iterables.stream(atlas.edges()).map(Edge::asPolyLine).collect(), nodeMap);
+                Iterables.stream(atlas.edges()).map(Edge::asPolyLine).collect(), nodeMap,
+                AtlasNode::new);
         for (final Edge edge : atlas.edges())
         {
-            final Way way = new Way();
+            final AtlasEdge way = new AtlasEdge(edge);
             // Create the nodes that come from polyLine shapepoints
-            final List<org.openstreetmap.josm.data.osm.Node> nodes = new ArrayList<>();
+            final List<AtlasNode> nodes = new ArrayList<>();
             for (final Location location : edge.asPolyLine())
             {
                 final Double nodeLat = location.getLatitude().asDegrees();
@@ -89,47 +120,30 @@ public class AtlasDataSetBuilder
                 {
                     bounds.extend(latlon);
                 }
-                final org.openstreetmap.josm.data.osm.Node node = nodeMap.get(location);
-                nodes.add(node);
+                nodes.add(nodeMap.get(location));
             }
             way.setNodes(nodes);
-            final TreeMap<String, String> tagMap = new TreeMap<>();
-            tagMap.putAll(edge.getTags());
-            tagMap.put("first_lat_lon", edge.start().getLocation().toString());
-            final int index = 0;
-            for (final Relation relation : edge.relations())
-            {
-                tagMap.put("relation_" + index, String.valueOf(relation.getIdentifier()));
-            }
-            if (edge.hasReverseEdge())
-            {
-                tagMap.put("is_two_way", "yes");
-            }
-            way.setKeys(tagMap);
             // only takes positive direction because OSM doesn't allow negative ID's and only one
             // direction is required for visualization
             if (edge.getIdentifier() > 0)
             {
                 way.setOsmId(edge.getIdentifier(), IDENTIFIER_VERSION);
-                try
-                {
-                    dataSet.addPrimitive(way);
-                }
-                catch (final Exception e)
-                {
-                    // JOSM will throw an exception complaining that ways were added to the dataset
-                    // without the nodes that comprise them
-                    System.out.println("Unable to add OSM way " + way + " " + e.getMessage());
-                }
+                dataSet.addPrimitive(way);
             }
         }
+    }
+
+    private void convertLines(final Atlas atlas, final ProgressMonitor monitor,
+            final Map<Location, AtlasPoint> pointMap, final AtlasDataSet dataSet)
+    {
         monitor.setCustomText("Converting lines...");
         buildShapePoints(dataSet, monitor,
-                Iterables.stream(atlas.lines()).map(Line::asPolyLine).collect(), nodeMap);
+                Iterables.stream(atlas.lines()).map(Line::asPolyLine).collect(), pointMap,
+                AtlasPoint::new);
         for (final Line line : atlas.lines())
         {
-            final Way way = new Way();
-            final List<org.openstreetmap.josm.data.osm.Node> nodes = new ArrayList<>();
+            final AtlasLine way = new AtlasLine(line);
+            final List<AtlasPoint> points = new ArrayList<>();
             for (final Location location : line.asPolyLine())
             {
                 final Double nodeLat = location.getLatitude().asDegrees();
@@ -143,38 +157,25 @@ public class AtlasDataSetBuilder
                 {
                     bounds.extend(latlon);
                 }
-                final org.openstreetmap.josm.data.osm.Node node = nodeMap.get(location);
-                nodes.add(node);
+                points.add(pointMap.get(location));
             }
-            way.setNodes(nodes);
-            final TreeMap<String, String> tagMap = new TreeMap<>();
-            tagMap.putAll(line.getTags());
-            tagMap.put("first_lat_lon", line.getRawGeometry().iterator().next().toString());
-            final int index = 0;
-            for (final Relation relation : line.relations())
-            {
-                tagMap.put("relation_" + index, String.valueOf(relation.getIdentifier()));
-            }
-            way.setKeys(tagMap);
+            way.setNodes(points);
             if (line.getIdentifier() > 0)
             {
                 way.setOsmId(line.getIdentifier(), IDENTIFIER_VERSION);
             }
-            try
-            {
-                dataSet.addPrimitive(way);
-            }
-            catch (final Exception e)
-            {
-                logger.error("Already has: {}",
-                        dataSet.getPrimitiveById(line.getOsmIdentifier(), OsmPrimitiveType.WAY), e);
-            }
+            dataSet.addPrimitive(way);
         }
+    }
+
+    private void convertAreas(final Atlas atlas, final ProgressMonitor monitor,
+            final AtlasDataSet dataSet)
+    {
         monitor.setCustomText("Converting areas...");
         for (final Area area : atlas.areas())
         {
-            final Way way = new Way();
-            final List<org.openstreetmap.josm.data.osm.Node> nodes = new ArrayList<>();
+            final AtlasArea way = new AtlasArea(area);
+            final List<AtlasPoint> points = new ArrayList<>();
             final Polygon polygon = area.asPolygon();
             for (final Location location : polygon)
             {
@@ -189,84 +190,62 @@ public class AtlasDataSetBuilder
                 {
                     bounds.extend(latlon);
                 }
-                final org.openstreetmap.josm.data.osm.Node node = new org.openstreetmap.josm.data.osm.Node(
-                        latlon);
+                final AtlasPoint node = new AtlasPoint(latlon);
                 dataSet.addPrimitive(node);
-                nodes.add(node);
+                points.add(node);
             }
             // first node added again so JOSM draws area
             final Location lastlocation = polygon.first();
             final Double lastNodeLat = lastlocation.getLatitude().asDegrees();
             final Double lastNodeLon = lastlocation.getLongitude().asDegrees();
             final LatLon lastLatLon = new LatLon(lastNodeLat, lastNodeLon);
-            final org.openstreetmap.josm.data.osm.Node lastNode = new org.openstreetmap.josm.data.osm.Node(
-                    lastLatLon);
+            final AtlasPoint lastNode = new AtlasPoint(lastLatLon);
             dataSet.addPrimitive(lastNode);
-            nodes.add(lastNode);
-            way.setNodes(nodes);
-            final TreeMap<String, String> tagMap = new TreeMap<>();
-            tagMap.putAll(area.getTags());
-            tagMap.put("first_lat_lon", area.getRawGeometry().iterator().next().toString());
-            final int index = 0;
-            for (final Relation relation : area.relations())
-            {
-                tagMap.put("relation_" + index, String.valueOf(relation.getIdentifier()));
-            }
-            way.setKeys(tagMap);
+            points.add(lastNode);
+            way.setNodes(points);
             way.setOsmId(Math.abs(area.getIdentifier()), IDENTIFIER_VERSION);
             dataSet.addPrimitive(way);
         }
+    }
+
+    private void convertRelations(final Atlas atlas, final ProgressMonitor monitor,
+            final AtlasDataSet dataSet)
+    {
         monitor.setCustomText("Converting relations.");
         for (final Relation relation : atlas.relations())
         {
-            final org.openstreetmap.josm.data.osm.Relation osmRelation = new org.openstreetmap.josm.data.osm.Relation();
-            final List<org.openstreetmap.josm.data.osm.RelationMember> memberList = new ArrayList<>();
-            final TreeMap<String, String> tagMap = new TreeMap<>();
-            tagMap.putAll(relation.getTags());
-            int index = 0;
+            final AtlasRelation osmRelation = new AtlasRelation(relation);
+            final List<AtlasRelationMember> memberList = new ArrayList<>();
             for (final RelationMember member : relation.members())
             {
-                final String role = member.getRole();
-                final OsmPrimitive primitive;
+                final AtlasPrimitive primitive;
+                final long identifier = member.getEntity().getIdentifier();
                 if (member.getEntity() instanceof LocationItem)
                 {
                     // Node & Point
-                    primitive = dataSet.getPrimitiveById(member.getEntity().getIdentifier(),
-                            OsmPrimitiveType.NODE);
+                    primitive = dataSet.getPrimitiveById(identifier, OsmPrimitiveType.NODE);
                 }
                 else if (member.getEntity() instanceof AtlasItem)
                 {
                     // Edge, Area, Line
-                    primitive = dataSet.getPrimitiveById(member.getEntity().getIdentifier(),
-                            OsmPrimitiveType.WAY);
+                    primitive = dataSet.getPrimitiveById(identifier, OsmPrimitiveType.WAY);
                 }
                 else
                 {
                     // Relation
-                    primitive = dataSet.getPrimitiveById(member.getEntity().getIdentifier(),
-                            OsmPrimitiveType.RELATION);
+                    primitive = dataSet.getPrimitiveById(identifier, OsmPrimitiveType.RELATION);
                 }
                 if (primitive != null)
                 {
-                    tagMap.put("member_" + index,
-                            String.valueOf(member.getEntity().getIdentifier()));
-                    index++;
-                    final org.openstreetmap.josm.data.osm.RelationMember osmRelationMem = new org.openstreetmap.josm.data.osm.RelationMember(
-                            role, primitive);
-                    memberList.add(osmRelationMem);
+                    memberList.add(new AtlasRelationMember(member, primitive));
                 }
-
             }
             osmRelation.setMembers(memberList);
             final long relationId = relation.getIdentifier();
             monitor.setCustomText("Adding relation " + relationId + " to the data set...");
             osmRelation.setOsmId(relationId, IDENTIFIER_VERSION);
-            osmRelation.setKeys(tagMap);
             dataSet.addPrimitive(osmRelation);
         }
-        monitor.setCustomText(
-                "Done adding atlas objects to data set. Please wait for layer to build...");
-        return dataSet;
     }
 
     public Bounds getBounds()
@@ -274,64 +253,52 @@ public class AtlasDataSetBuilder
         return bounds;
     }
 
-    private org.openstreetmap.josm.data.osm.Node addOsmNode(final DataSet dataSet,
-            final ProgressMonitor monitor, final long identifier, final Location location,
-            final Map<String, String> tags, final Iterable<Relation> relations,
-            final Map<Location, org.openstreetmap.josm.data.osm.Node> nodeMap)
+    private <L extends LocationItem, N extends AtlasPunctual> void addOsmNode(
+            final AtlasDataSet dataSet, final ProgressMonitor monitor, final long identifier,
+            final Location location, final Iterable<Relation> relations,
+            final Map<Location, N> nodeMap, final Supplier<N> builder)
     {
-        if (nodeMap.containsKey(location))
+        if (!nodeMap.containsKey(location))
         {
-            return nodeMap.get(location);
-        }
-        final Double lat = location.getLatitude().asDegrees();
-        final Double lon = location.getLongitude().asDegrees();
-        final LatLon latlon = new LatLon(lat, lon);
-        if (bounds == null)
-        {
-            bounds = new Bounds(latlon);
-        }
-        else
-        {
-            bounds.extend(latlon);
-        }
-        final org.openstreetmap.josm.data.osm.Node nodeOSM = new org.openstreetmap.josm.data.osm.Node(
-                latlon);
-        if (identifier > 0)
-        {
-            final TreeMap<String, String> tagMap = new TreeMap<>();
-            tagMap.putAll(tags);
-            tagMap.put("lat_lon", location.toString());
-            final int index = 0;
-            for (final Relation relation : relations)
+            final Double lat = location.getLatitude().asDegrees();
+            final Double lon = location.getLongitude().asDegrees();
+            final LatLon latlon = new LatLon(lat, lon);
+            if (bounds == null)
             {
-                tagMap.put("relation_" + index, String.valueOf(relation.getIdentifier()));
+                bounds = new Bounds(latlon);
             }
-            nodeOSM.setKeys(tagMap);
-            nodeOSM.setOsmId(identifier, IDENTIFIER_VERSION);
+            else
+            {
+                bounds.extend(latlon);
+            }
+            final N nodeOSM = builder.get();
+            if (identifier > 0)
+            {
+                nodeOSM.setOsmId(identifier, IDENTIFIER_VERSION);
+            }
+            try
+            {
+                dataSet.addPrimitive(nodeOSM);
+                nodeMap.put(location, nodeOSM);
+            }
+            catch (final DataIntegrityProblemException e)
+            {
+                // Node and Points can share the same ID
+                Logging.debug(e);
+            }
         }
-        try
-        {
-            dataSet.addPrimitive(nodeOSM);
-            nodeMap.put(location, nodeOSM);
-        }
-        catch (final Exception e)
-        {
-            monitor.setCustomText(
-                    "Already has: " + dataSet.getPrimitiveById(identifier, OsmPrimitiveType.NODE));
-        }
-        return nodeOSM;
     }
 
-    private void buildShapePoints(final DataSet dataSet, final ProgressMonitor monitor,
-            final Iterable<PolyLine> polyLines,
-            final Map<Location, org.openstreetmap.josm.data.osm.Node> nodeMap)
+    private <N extends AtlasPunctual> void buildShapePoints(final AtlasDataSet dataSet,
+            final ProgressMonitor monitor, final Iterable<PolyLine> polyLines,
+            final Map<Location, N> nodeMap, final Function<Location, N> builder)
     {
         for (final PolyLine polyLine : polyLines)
         {
             for (final Location shapePoint : polyLine)
             {
-                addOsmNode(dataSet, monitor, -1, shapePoint, Maps.stringMap(), new ArrayList<>(),
-                        nodeMap);
+                addOsmNode(dataSet, monitor, -1, shapePoint, new ArrayList<>(), nodeMap,
+                        () -> builder.apply(shapePoint));
             }
         }
     }
