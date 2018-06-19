@@ -19,7 +19,7 @@ checkstyle {
     toolVersion = '8.10.1'
 }
 josm { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.4/gradle-josm-plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-plugin-extension
-    josmCompileVersion '13957'
+    josmCompileVersion '13959'
     manifest.minJosmVersion = '13957'
 }
 ext.versions = [
