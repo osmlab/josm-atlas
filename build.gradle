@@ -23,7 +23,7 @@ josm { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.4/gradle-j
     manifest.minJosmVersion = '13957'
 }
 ext.versions = [
-    'atlas': '5.0.16'
+    'atlas': '5.5.0'
 ]
 
 // corresponds to POM description/group
