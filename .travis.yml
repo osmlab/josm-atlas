@@ -23,8 +23,6 @@ branches:
 language: java
 jdk:
   - openjdk8
-  - oraclejdk8
-  - oraclejdk9
 install:
   - chmod ug+x .travis/*.sh
   - .travis/install.sh
