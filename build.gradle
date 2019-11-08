@@ -1,6 +1,6 @@
 plugins {
-    id 'org.openstreetmap.josm' version '0.3.4'
-    id 'com.diffplug.gradle.spotless' version '3.9.0'
+    id 'org.openstreetmap.josm' version '0.6.4'
+    id 'com.diffplug.gradle.spotless' version '3.18.0'
     // Used to promote a staging release build
     // https://github.com/Codearte/gradle-nexus-staging-plugin
     // gradle closeAndReleaseRepository
@@ -16,14 +16,14 @@ plugins {
 
 // Define tool and dependency versions
 checkstyle {
-    toolVersion = '8.10.1'
+    toolVersion = '8.18'
 }
 josm { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.4/gradle-josm-plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-plugin-extension
     josmCompileVersion '13959'
     manifest.minJosmVersion = '13957'
 }
 ext.versions = [
-    'atlas': '5.5.0'
+    'atlas': '5.8.4'
 ]
 
 // corresponds to POM description/group
