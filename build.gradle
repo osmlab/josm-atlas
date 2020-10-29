@@ -1,10 +1,13 @@
 plugins {
-    id 'org.openstreetmap.josm' version '0.3.4'
-    id 'com.diffplug.gradle.spotless' version '3.9.0'
+    id 'org.openstreetmap.josm' version '0.7.1'
+    id 'com.diffplug.gradle.spotless' version '4.5.1'
     // Used to promote a staging release build
     // https://github.com/Codearte/gradle-nexus-staging-plugin
     // gradle closeAndReleaseRepository
-    id "io.codearte.nexus-staging" version "0.11.0"
+    id "io.codearte.nexus-staging" version "0.22.0"
+
+    // Used to find updated versions
+    id "com.github.ben-manes.versions" version "0.33.0"
 
     id 'java'
     id 'checkstyle'
@@ -18,12 +21,12 @@ plugins {
 checkstyle {
     toolVersion = '8.10.1'
 }
-josm { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.4/gradle-josm-plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-plugin-extension
-    josmCompileVersion '13959'
-    manifest.minJosmVersion = '13957'
+josm { // see https://floscher.gitlab.io/gradle-josm-plugin/kdoc/latest/plugin/plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-plugin-extension/index.html
+    josmCompileVersion '14139'
+    manifest.minJosmVersion = '14119'
 }
 ext.versions = [
-    'atlas': '5.5.0'
+    'atlas': '6.3.2'
 ]
 
 // corresponds to POM description/group
@@ -33,21 +36,22 @@ group = 'org.openstreetmap.atlas'
 
 // JOSM plugin configuration
 archivesBaseName = 'josm-atlas'
-josm.manifest { // see https://floscher.github.io/gradle-josm-plugin/kdoc/v0.3.4/gradle-josm-plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-manifest
+josm.manifest { // see https://floscher.gitlab.io/gradle-josm-plugin/kdoc/latest/plugin/plugin/org.openstreetmap.josm.gradle.plugin.config/-josm-manifest/index.html
     author = 'James Gage'
     canLoadAtRuntime = true
     description = 'Allows you to view an Atlas file as a layer.'
     iconPath = 'images/dialogs/world-3.png'
     mainClass = 'org.openstreetmap.atlas.AtlasReader'
     website = new URL('https://github.com/osmlab/josm-atlas')
+    minJavaVersion = 11
 }
 
 sourceCompatibility=1.8
-targetCompatibility=1.8
+targetCompatibility=11
 
 repositories {
     // For geotools
-    maven { url "http://download.osgeo.org/webdav/geotools/" }
+    maven { url "http://repo.osgeo.org/repository/release/" }
     mavenCentral()
 }
 

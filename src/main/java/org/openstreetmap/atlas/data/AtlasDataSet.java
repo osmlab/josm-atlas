@@ -17,7 +17,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.data.DataSource;
 import org.openstreetmap.josm.data.osm.BBox;
 import org.openstreetmap.josm.data.osm.DataIntegrityProblemException;
@@ -38,13 +37,14 @@ import org.openstreetmap.josm.data.osm.SimplePrimitiveId;
 import org.openstreetmap.josm.data.osm.Storage;
 import org.openstreetmap.josm.data.osm.UploadPolicy;
 import org.openstreetmap.josm.data.osm.WaySegment;
+import org.openstreetmap.josm.spi.preferences.Config;
 import org.openstreetmap.josm.tools.ListenerList;
 import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.SubclassFilteredCollection;
 
 /**
  * Atlas data set
- * 
+ *
  * @author Vincent Privat
  */
 public final class AtlasDataSet
@@ -205,7 +205,7 @@ public final class AtlasDataSet
 
     /**
      * Show message and stack trace in log in case primitive is not found
-     * 
+     *
      * @param primitiveId
      *            primitive id to look for
      * @return Primitive by id.
@@ -219,7 +219,7 @@ public final class AtlasDataSet
                     "JOSM expected to find primitive [{0} {1}] in dataset but it is not there. Please report this "
                             + "at {2}. This is not a critical error, it should be safe to continue in your work.",
                     primitiveId.getType(), Long.toString(primitiveId.getUniqueId()),
-                    Main.getJOSMWebsite()));
+                    Config.getUrls().getJOSMWebsite()));
             Logging.error(new Exception());
         }
 
@@ -389,7 +389,7 @@ public final class AtlasDataSet
      * Do a selection change.
      * <p>
      * This is the only method that changes the current selection state.
-     * 
+     *
      * @param command
      *            A generator that generates the {@link SelectionChangeEvent} for the given base set
      *            of currently selected primitives.
@@ -490,7 +490,7 @@ public final class AtlasDataSet
      * Returns mappaint cache index for this DataSet. If the {@link OsmPrimitive#mappaintCacheIdx}
      * is not equal to the DataSet mappaint cache index, this means the cache for that primitive is
      * out of date.
-     * 
+     *
      * @return mappaint cache index
      */
     public short getMappaintCacheIndex()
